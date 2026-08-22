@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="ur" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Danish Medical Store - Pharmacy System</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        @media print {
+            body * { visibility: hidden; }
+            #printable-receipt, #printable-receipt * { visibility: visible; }
+            #printable-receipt { position: absolute; left: 0; top: 0; width: 100%; }
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen">
+
+    <!-- LOGIN OVERLAY -->
+    <div id="loginModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md">
+        <div class="w-full max-w-md p-8 bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl relative overflow-hidden">
+            <div class="absolute -top-10 -right-10 w-40 h-40 bg-indigo-600/20 rounded-full blur-3xl"></div>
+            <div class="text-center mb-8">
+                <div class="inline-flex p-4 bg-indigo-600/10 border border-indigo-500/20 rounded-2xl mb-4 text-indigo-400">
+                    <i class="fa-solid fa-staff-snake text-4xl"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-white tracking-wide">Danish Medical Store</h2>
+                <p class="text-xs text-slate-400 mt-1">Pharmacy Management System</p>
+            </div>
+            <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-5">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Access Pin / Password</label>
+                    <div class="relative">
+                        <input type="password" id="loginPassword" placeholder="Enter password (Default: 1234)" required
+                            class="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl focus:outline-none focus:border-indigo-500 text-white placeholder-slate-500">
+                        <i class="fa-solid fa-lock absolute right-4 top-3.5 text-slate-500"></i>
+                    </div>
+                </div>
+                <button type="submit" 
+                    class="w-full py-3.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 font-semibold rounded-xl text-white shadow-lg shadow-indigo-600/30 transition duration-200">
+                    Unlock System
+                </button>
+                <p id="loginError" class="text-red-400 text-xs text-center hidden">Incorrect password. Try '1234'.</p>
+            </form>
+        </div>
+    </div>
+
+    <!-- MAIN DASHBOARD -->
+    <div id="app" class="hidden flex h-screen overflow-hidden">
+        <!-- SIDEBAR -->
+        <aside class="w-64 bg-slate-950 border-r border-slate-800 flex flex-col justify-between">
+            <div>
+                <div class="p-6 border-b border-slate-800/60 flex items-center gap-3">
+                    <i class="fa-solid fa-clinic-medical text-2xl text-indigo-500"></i>
+                    <div>
+                        <h1 class="font-bold text-sm leading-tight text-slate-200">Danish Medical</h1>
+                        <span class="text-[10px] text-indigo-400 uppercase font-semibold">Store Portal</span>
+                    </div>
+                </div>
+                <nav class="p-4 space-y-1">
+                    <button onclick="switchTab('pos')" id="btn-pos" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm text-indigo-400 bg-indigo-600/10 border border-indigo-500/20">
+                        <i class="fa-solid fa-cash-register"></i> Billing & Invoice
+                    </button>
+                    <button onclick="switchTab('inventory')" id="btn-inventory" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm text-slate-400 hover:bg-slate-800/50">
+                        <i class="fa-solid fa-boxes-stacked"></i> Stock / Inventory
+                    </button>
+                    <button onclick="switchTab('patients')" id="btn-patients" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm text-slate-400 hover:bg-slate-800/50">
+                        <i class="fa-solid fa-users"></i> Patient Records
+                    </button>
+                    <button onclick="switchTab('accounts')" id="btn-accounts" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm text-slate-400 hover:bg-slate-800/50">
+                        <i class="fa-solid fa-chart-line"></i> Sales & Accounts
+                    </button>
+                </nav>
+            </div>
+            <div class="p-4 border-t border-slate-800/60">
+                <button onclick="logout()" class="w-full flex items-center gap-3 px-4 py-2.5 text-xs text-red-400 hover:bg-red-500/10 rounded-xl transition">
+                    <i class="fa-solid fa-right-from-bracket"></i> Lock System
+                </button>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT AREA -->
+        <main class="flex-1 overflow-y-auto bg-slate-900/50 p-6">
+            
+            <!-- VIEW 1: BILLING & INVOICE (POS) -->
+            <section id="view-pos" class="grid grid-cols-12 gap-6 h-full">
+                <!-- Patient Form & Medicine Selection -->
+                <div class="col-span-7 bg-slate-950/60 border border-slate-800/80 rounded-2xl p-6 flex flex-col justify-between overflow-y-auto">
+                    <div>
+                        <h2 class="text-base font-bold text-white mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-user-plus text-indigo-400"></i> Patient & Sale Details
+                        </h2>
+                        
+                        <!-- Patient Info Fields -->
+                        <div class="grid grid-cols-3 gap-3 mb-6">
+                            <div>
+                                <label class="text-xs text-slate-400 mb-1 block">Patient Name</label>
+                                <input type="text" id="custName" oninput="updateReceipt()" placeholder="FullName" class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm text-white focus:outline-none focus:border-indigo-500">
+                            </div>
+                            <div>
+                                <label class="text-xs text-slate-400 mb-1 block">Mobile Number</label>
+                                <input type="text" id="custPhone" oninput="updateReceipt()" placeholder="0300-0000000" class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm text-white focus:outline-none focus:border-indigo-500">
+                            </div>
+                            <div>
+                                <label class="text-xs text-slate-400 mb-1 block">Age</label>
+                                <input type="number" id="custAge" oninput="updateReceipt()" placeholder="e.g. 25" class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm text-white focus:outline-none focus:border-indigo-500">
+                            </div>
+                        </div>
+
+                        <!-- Add Item Row -->
+                        <div class="border-t border-slate-800/80 pt-4 mb-4">
+                            <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Add Medicine</h3>
+                            <div class="flex gap-2 mb-4">
+                                <select id="posMedSelect" class="flex-1 px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm text-white focus:outline-none focus:border-indigo-500">
+                                    <option value="">Select Item from Inventory...</option>
+                                </select>
+                                <input type="number" id="posMedQty" value="1" min="1" class="w-20 px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm text-white focus:outline-none focus:border-indigo-500" placeholder="Qty">
+                                <button onclick="addItemToCart()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-semibold transition">
+                                    <i class="fa-solid fa-plus"></i> Add
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Items Table -->
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm text-slate-300">
+                                <thead class="bg-slate-900 text-xs uppercase text-slate-500">
+                                    <tr>
+                                        <th class="p-2">Item</th>
+                                        <th class="p-2">Price</th>
+                                        <th class="p-2">Qty</th>
+                                        <th class="p-2">Subtotal</th>
+                                        <th class="p-2">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cartTable" class="divide-y divide-slate-800/60">
+                                    <!-- Cart Items Dynamic -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Discount Section -->
+                    <div class="border-t border-slate-800/80 pt-4 mt-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <label class="text-sm font-semibold text-slate-300">Discount (%)</label>
+                            <input type="number" id="posDiscount" value="0" min="0" max="100" oninput="updateReceipt()" class="w-24 px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-right text-sm text-white focus:outline-none focus:border-indigo-500">
+                        </div>
+                        <button onclick="completeSale()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl transition shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-check-circle"></i> Complete Sale & Save Record
+                        </button>
+                    </div>
+                </div>
+
+                <!-- LIVE RECEIPT PREVIEW -->
+                <div class="col-span-5 bg-slate-950/60 border border-slate-800/80 rounded-2xl p-6 flex flex-col justify-between">
+                    <div>
+                        <h2 class="text-base font-bold text-white mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-receipt text-indigo-400"></i> Live Invoice Preview
+                        </h2>
+                        
+                        <!-- Printable Receipt Area -->
+                        <div id="printable-receipt" class="bg-slate-100 text-slate-900 p-6 rounded-xl font-mono text-xs shadow-inner leading-relaxed">
+                            <div class="text-center border-b border-dashed border-slate-400 pb-3 mb-3">
+                                <h3 class="font-bold text-lg uppercase tracking-wide">Danish Medical Store</h3>
+                                <p class="text-[10px] text-slate-600">Main Pharmacy Road, Retail & Wholesale</p>
+                                <p class="text-[10px] text-slate-600">Ph: +92 300 0000000</p>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <p><strong>Patient:</strong> <span id="recName">Walk-in</span></p>
+                                <p><strong>Phone:</strong> <span id="recPhone">N/A</span></p>
+                                <p><strong>Date:</strong> <span id="recDate">--</span></p>
+                            </div>
+
+                            <table class="w-full text-left mb-3">
+                                <thead class="border-b border-slate-400 text-[10px]">
+                                    <tr>
+                                        <th>Item</th>
+                                        <th>Qty</th>
+                                        <th class="text-right">Price</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recItems" class="divide-y divide-slate-200">
+                                    <!-- Items Live -->
+                                </tbody>
+                            </table>
+
+                            <div class="border-t border-dashed border-slate-400 pt-2 text-right space-y-1">
+                                <p>Gross Total: Rs. <span id="recGross">0.00</span></p>
+                                <p>Discount (<span id="recDiscPct">0</span>%): -Rs. <span id="recDiscVal">0.00</span></p>
+                                <p class="text-sm font-bold border-t border-slate-400 pt-1">Net Total: Rs. <span id="recNet">0.00</span></p>
+                            </div>
+
+                            <div class="text-center mt-4 border-t border-slate-300 pt-2 text-[9px] text-slate-500">
+                                Get well soon! Medicines once sold are non-refundable.
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="window.print()" class="w-full mt-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-print"></i> Print Slip
+                    </button>
+                </div>
+            </section>
+
+            <!-- VIEW 2: INVENTORY MANAGEMENT -->
+            <section id="view-inventory" class="hidden space-y-6">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-xl font-bold text-white">Stock & Inventory</h2>
+                    <button onclick="toggleModal('medModal', true)" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-medium flex items-center gap-2">
+                        <i class="fa-solid fa-plus"></i> Add New Medicine
+                    </button>
+                </div>
+
+                <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl overflow-hidden">
+                    <table class="w-full text-left text-sm text-slate-300">
+                        <thead class="bg-slate-900 text-xs uppercase text-slate-500">
+                            <tr>
+                                <th class="p-4">Medicine Name</th>
+                                <th class="p-4">Batch #</th>
+                                <th class="p-4">Expiry Date</th>
+                                <th class="p-4">Stock Left</th>
+                                <th class="p-4">Unit Price (PKR)</th>
+                                <th class="p-4">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventoryTable" class="divide-y divide-slate-800/60">
+                            <!-- Dynamic Stock Data -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- VIEW 3: PATIENT RECORDS -->
+            <section id="view-patients" class="hidden space-y-6">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-xl font-bold text-white">Patient Database</h2>
+                    <input type="text" id="patientSearch" oninput="renderPatients()" placeholder="Search patient by name or phone..." class="w-72 px-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500">
+                </div>
+
+                <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl overflow-hidden">
+                    <table class="w-full text-left text-sm text-slate-300">
+                        <thead class="bg-slate-900 text-xs uppercase text-slate-500">
+                            <tr>
+                                <th class="p-4">Date</th>
+                                <th class="p-4">Patient Info</th>
+                                <th class="p-4">Age</th>
+                                <th class="p-4">Purchased Items</th>
+                                <th class="p-4">Total Paid</th>
+                            </tr>
+                        </thead>
+                        <tbody id="patientsTable" class="divide-y divide-slate-800/60">
+                            <!-- Dynamic Patients Data -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- VIEW 4: ACCOUNTS & ANALYTICS -->
+            <section id="view-accounts" class="hidden space-y-6">
+                <h2 class="text-xl font-bold text-white">Financial Dashboard</h2>
+                
+                <div class="grid grid-cols-3 gap-6">
+                    <div class="p-6 bg-slate-950/60 border border-slate-800/80 rounded-2xl">
+                        <span class="text-xs text-slate-500 font-semibold uppercase">Total Revenue</span>
+                        <h3 class="text-3xl font-bold text-emerald-400 mt-2">Rs. <span id="accTotalRevenue">0</span></h3>
+                    </div>
+                    <div class="p-6 bg-slate-950/60 border border-slate-800/80 rounded-2xl">
+                        <span class="text-xs text-slate-500 font-semibold uppercase">Total Patients Served</span>
+                        <h3 class="text-3xl font-bold text-indigo-400 mt-2"><span id="accTotalSales">0</span></h3>
+                    </div>
+                    <div class="p-6 bg-slate-950/60 border border-slate-800/80 rounded-2xl">
+                        <span class="text-xs text-slate-500 font-semibold uppercase">Total Inventory Items</span>
+                        <h3 class="text-3xl font-bold text-violet-400 mt-2"><span id="accTotalItems">0</span></h3>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- ADD MEDICINE MODAL -->
+    <div id="medModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 hidden">
+        <div class="w-full max-w-lg p-6 bg-slate-900 border border-slate-800 rounded-2xl">
+            <h3 class="text-lg font-bold text-white mb-4">Add New Medicine / Item</h3>
+            <form onsubmit="saveMedicine(event)" class="space-y-4">
+                <input type="text" id="mName" placeholder="Medicine Name (e.g., Panadol 500mg)" required class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white">
+                <div class="grid grid-cols-2 gap-3">
+                    <input type="text" id="mBatch" placeholder="Batch Number" required class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white">
+                    <input type="date" id="mExpiry" required class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <input type="number" id="mStock" placeholder="Stock Quantity" required class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white">
+                    <input type="number" step="0.01" id="mPrice" placeholder="Unit Price (PKR)" required class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white">
+                </div>
+                <div class="flex justify-end gap-3 pt-2">
+                    <button type="button" onclick="toggleModal('medModal', false)" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg text-sm">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold">Save Medicine</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- APP SCRIPT LOGIC -->
+    <script>
+        // DATA STORES
+        let inventory = JSON.parse(localStorage.getItem('danish_inventory')) || [
+            { id: 1, name: "Panadol 500mg", batch: "B-992", expiry: "2026-12-01", stock: 120, price: 30 },
+            { id: 2, name: "Augmentin 625mg", batch: "B-441", expiry: "2025-08-15", stock: 45, price: 280 }
+        ];
+        let salesHistory = JSON.parse(localStorage.getItem('danish_sales')) || [];
+        let cart = [];
+
+        // LOGIN SYSTEM
+        function handleLogin(e) {
+            e.preventDefault();
+            const pass = document.getElementById('loginPassword').value;
+            if(pass === '1234') {
+                document.getElementById('loginModal').classList.add('hidden');
+                document.getElementById('app').classList.remove('hidden');
+                init();
+            } else {
+                document.getElementById('loginError').classList.remove('hidden');
+            }
+        }
+        function logout() {
+            document.getElementById('loginModal').classList.remove('hidden');
+            document.getElementById('app').classList.add('hidden');
+        }
+
+        // NAVIGATION CONTROL
+        function switchTab(tab) {
+            ['pos', 'inventory', 'patients', 'accounts'].forEach(t => {
+                document.getElementById(`view-${t}`).classList.add('hidden');
+                const btn = document.getElementById(`btn-${t}`);
+                btn.className = "nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm text-slate-400 hover:bg-slate-800/50";
+            });
+            document.getElementById(`view-${tab}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`btn-${tab}`);
+            activeBtn.className = "nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm text-indigo-400 bg-indigo-600/10 border border-indigo-500/20";
+        }
+
+        function toggleModal(id, show) {
+            document.getElementById(id).classList.toggle('hidden', !show);
+        }
+
+        // INITIALIZATION
+        function init() {
+            renderInventoryDropdown();
+            renderInventoryTable();
+            renderPatients();
+            renderAccounts();
+            updateReceipt();
+        }
+
+        // INVENTORY LOGIC
+        function saveMedicine(e) {
+            e.preventDefault();
+            const newItem = {
+                id: Date.now(),
+                name: document.getElementById('mName').value,
+                batch: document.getElementById('mBatch').value,
+                expiry: document.getElementById('mExpiry').value,
+                stock: parseInt(document.getElementById('mStock').value),
+                price: parseFloat(document.getElementById('mPrice').value)
+            };
+            inventory.push(newItem);
+            localStorage.setItem('danish_inventory', JSON.stringify(inventory));
+            toggleModal('medModal', false);
+            init();
+            e.target.reset();
+        }
+
+        function deleteItem(id) {
+            inventory = inventory.filter(i => i.id !== id);
+            localStorage.setItem('danish_inventory', JSON.stringify(inventory));
+            init();
+        }
+
+        function renderInventoryTable() {
+            const tbody = document.getElementById('inventoryTable');
+            tbody.innerHTML = inventory.map(item => `
+                <tr class="hover:bg-slate-900/40">
+                    <td class="p-4 font-semibold text-white">${item.name}</td>
+                    <td class="p-4 text-xs font-mono text-slate-400">${item.batch}</td>
+                    <td class="p-4 text-xs ${new Date(item.expiry) < new Date() ? 'text-red-400 font-bold' : ''}">${item.expiry}</td>
+                    <td class="p-4"><span class="px-2.5 py-1 rounded-full text-xs font-semibold ${item.stock < 10 ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'}">${item.stock}</span></td>
+                    <td class="p-4 font-semibold">Rs. ${item.price.toFixed(2)}</td>
+                    <td class="p-4">
+                        <button onclick="deleteItem(${item.id})" class="text-xs text-red-400 hover:underline"><i class="fa-solid fa-trash"></i> Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderInventoryDropdown() {
+            const select = document.getElementById('posMedSelect');
+            select.innerHTML = '<option value="">Select Item from Inventory...</option>' + 
+                inventory.map(item => `<option value="${item.id}">${item.name} (Rs. ${item.price}) - Stock: ${item.stock}</option>`).join('');
+        }
+
+        // POS & CART SYSTEM
+        function addItemToCart() {
+            const id = parseInt(document.getElementById('posMedSelect').value);
+            const qty = parseInt(document.getElementById('posMedQty').value);
+            if(!id || qty <= 0) return;
+
+            const med = inventory.find(i => i.id === id);
+            if(med.stock < qty) {
+                alert('Not enough stock available!');
+                return;
+            }
+
+            const existing = cart.find(c => c.id === id);
+            if(existing) {
+                existing.qty += qty;
+            } else {
+                cart.push({ ...med, qty });
+            }
+            renderCart();
+        }
+
+        function removeFromCart(id) {
+            cart = cart.filter(c => c.id !== id);
+            renderCart();
+        }
+
+        function renderCart() {
+            const tbody = document.getElementById('cartTable');
+            tbody.innerHTML = cart.map(item => `
+                <tr>
+                    <td class="p-2 font-medium text-white">${item.name}</td>
+                    <td class="p-2">Rs. ${item.price}</td>
+                    <td class="p-2">${item.qty}</td>
+                    <td class="p-2 font-semibold">Rs. ${(item.price * item.qty).toFixed(2)}</td>
+                    <td class="p-2"><button onclick="removeFromCart(${item.id})" class="text-red-400 hover:text-red-300"><i class="fa-solid fa-xmark"></i></button></td>
+                </tr>
+            `).join('');
+            updateReceipt();
+        }
+
+        function updateReceipt() {
+            const name = document.getElementById('custName').value || 'Walk-in Patient';
+            const phone = document.getElementById('custPhone').value || 'N/A';
+            const discPct = parseFloat(document.getElementById('posDiscount').value) || 0;
+
+            document.getElementById('recName').innerText = name;
+            document.getElementById('recPhone').innerText = phone;
+            document.getElementById('recDate').innerText = new Date().toLocaleDateString();
+
+            let gross = 0;
+            const itemsHtml = cart.map(i => {
+                const sub = i.price * i.qty;
+                gross += sub;
+                return `<tr><td class="py-1">${i.name}</td><td>${i.qty}</td><td class="text-right">Rs. ${sub.toFixed(2)}</td></tr>`;
+            }).join('');
+
+            const discVal = (gross * discPct) / 100;
+            const net = gross - discVal;
+
+            document.getElementById('recItems').innerHTML = itemsHtml;
+            document.getElementById('recGross').innerText = gross.toFixed(2);
+            document.getElementById('recDiscPct').innerText = discPct;
+            document.getElementById('recDiscVal').innerText = discVal.toFixed(2);
+            document.getElementById('recNet').innerText = net.toFixed(2);
+        }
+
+        function completeSale() {
+            if(cart.length === 0) return alert('Cart is empty!');
+
+            const sale = {
+                id: Date.now(),
+                date: new Date().toISOString().split('T')[0],
+                name: document.getElementById('custName').value || 'Walk-in Patient',
+                phone: document.getElementById('custPhone').value || 'N/A',
+                age: document.getElementById('custAge').value || 'N/A',
+                items: cart.map(c => `${c.name} (${c.qty})`).join(', '),
+                total: parseFloat(document.getElementById('recNet').innerText)
+            };
+
+            // Deduct stock
+            cart.forEach(c => {
+                const item = inventory.find(i => i.id === c.id);
+                if(item) item.stock -= c.qty;
+            });
+
+            salesHistory.push(sale);
+            localStorage.setItem('danish_sales', JSON.stringify(salesHistory));
+            localStorage.setItem('danish_inventory', JSON.stringify(inventory));
+
+            alert('Sale Completed & Recorded Successfully!');
+            cart = [];
+            document.getElementById('custName').value = '';
+            document.getElementById('custPhone').value = '';
+            document.getElementById('custAge').value = '';
+            document.getElementById('posDiscount').value = '0';
+            renderCart();
+            init();
+        }
+
+        // PATIENTS & ACCOUNTS LOGIC
+        function renderPatients() {
+            const q = (document.getElementById('patientSearch')?.value || '').toLowerCase();
+            const tbody = document.getElementById('patientsTable');
+            const filtered = salesHistory.filter(s => s.name.toLowerCase().includes(q) || s.phone.includes(q));
+            
+            tbody.innerHTML = filtered.map(s => `
+                <tr class="hover:bg-slate-900/40">
+                    <td class="p-4 text-slate-400 text-xs">${s.date}</td>
+                    <td class="p-4 font-semibold text-white">${s.name}<br><span class="text-xs font-normal text-slate-400">${s.phone}</span></td>
+                    <td class="p-4 text-xs">${s.age}</td>
+                    <td class="p-4 text-xs text-slate-300">${s.items}</td>
+                    <td class="p-4 font-bold text-emerald-400">Rs. ${s.total.toFixed(2)}</td>
+                </tr>
+            `).join('');
+        }
+
+        function renderAccounts() {
+            const totalRevenue = salesHistory.reduce((acc, curr) => acc + curr.total, 0);
+            document.getElementById('accTotalRevenue').innerText = totalRevenue.toFixed(2);
+            document.getElementById('accTotalSales').innerText = salesHistory.length;
+            document.getElementById('accTotalItems').innerText = inventory.length;
+        }
+    </script>
+</body>
+</html>
