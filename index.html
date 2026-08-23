@@ -93,7 +93,7 @@
                         <i class="fa-solid fa-chart-line text-emerald-400"></i> Sales & Accounts
                     </button>
                     <button onclick="switchTab('settings')" id="btn-settings" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 transition">
-                        <i class="fa-solid fa-database text-purple-400"></i> Backup & Restore
+                        <i class="fa-solid fa-database text-purple-400"></i> Settings & Control
                     </button>
                 </nav>
             </div>
@@ -111,6 +111,10 @@
             </div>
 
             <div class="p-4 border-t border-slate-800/80">
+                <div class="mb-2 text-xs text-slate-400 px-2 flex justify-between">
+                    <span>Active User:</span>
+                    <span id="activeUserLabel" class="text-cyan-400 font-bold uppercase">danish</span>
+                </div>
                 <button onclick="logout()" class="w-full flex items-center gap-3 px-4 py-2.5 text-xs text-rose-400 hover:bg-rose-500/10 rounded-xl transition font-semibold">
                     <i class="fa-solid fa-right-from-bracket"></i> Lock System
                 </button>
@@ -364,13 +368,28 @@
                 </div>
             </section>
 
-            <!-- VIEW 5: BACKUP & RESTORE SETTINGS -->
+            <!-- VIEW 5: BACKUP, USER RIGHTS & LOGIN DEVICES SETTINGS -->
             <section id="view-settings" class="hidden space-y-6">
-                <h2 class="text-xl font-bold text-slate-800">Data Management & Safety</h2>
+                <div class="flex justify-between items-center border-b border-slate-200 pb-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-800">System Control & Security Settings</h2>
+                        <p class="text-xs text-slate-500">Manage backups, active user access rights, and connected devices</p>
+                    </div>
+                    <!-- ADMIN ONLY CONTROL BUTTONS TOP BAR -->
+                    <div id="adminTopControls" class="flex gap-3">
+                        <button onclick="toggleModal('userRightsModal', true)" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs flex items-center gap-2 shadow-sm transition">
+                            <i class="fa-solid fa-user-shield"></i> User Rights Management
+                        </button>
+                        <button onclick="openDevicesModal()" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white font-bold rounded-xl text-xs flex items-center gap-2 shadow-sm transition">
+                            <i class="fa-solid fa-laptop-code"></i> Login Devices Log
+                        </button>
+                    </div>
+                </div>
+
                 <div class="grid grid-cols-2 gap-6">
                     <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
                         <h3 class="font-bold text-base text-slate-800 flex items-center gap-2"><i class="fa-solid fa-download text-cyan-600"></i> Backup System Data</h3>
-                        <p class="text-xs text-slate-500">Download a full backup of all inventory items and sales history. Keep this file safe to prevent data loss.</p>
+                        <p class="text-xs text-slate-500">Download a full backup of all inventory items, sales history, users, and device logs.</p>
                         <button onclick="downloadBackup()" class="px-5 py-2.5 bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold rounded-xl transition">
                             Download Backup File (.json)
                         </button>
@@ -378,7 +397,7 @@
 
                     <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
                         <h3 class="font-bold text-base text-slate-800 flex items-center gap-2"><i class="fa-solid fa-upload text-teal-600"></i> Restore System Data</h3>
-                        <p class="text-xs text-slate-500">Upload a previously saved backup file to restore inventory and sales data.</p>
+                        <p class="text-xs text-slate-500">Upload a previously saved backup file to restore complete system state.</p>
                         <input type="file" id="restoreFile" accept=".json" class="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100">
                         <button onclick="restoreBackup()" class="px-5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-xl transition">
                             Restore Data Now
@@ -388,6 +407,101 @@
             </section>
 
         </main>
+    </div>
+
+    <!-- ADMIN MODAL: USER RIGHTS MANAGEMENT (DANISH ONLY) -->
+    <div id="userRightsModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm hidden">
+        <div class="w-full max-w-2xl p-6 bg-white border border-slate-200 shadow-2xl rounded-2xl max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4 border-b pb-3">
+                <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-user-lock text-indigo-600"></i> Manage User Accounts & Access Rights
+                </h3>
+                <button onclick="toggleModal('userRightsModal', false)" class="text-slate-400 hover:text-slate-700">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Create New User Form -->
+            <form onsubmit="saveUserAccount(event)" class="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-6 space-y-3">
+                <h4 class="text-xs font-extrabold uppercase text-slate-600 tracking-wider">Create New Staff User</h4>
+                <div class="grid grid-cols-2 gap-3">
+                    <input type="text" id="newUsername" placeholder="Username (e.g., ali)" required class="px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-indigo-500">
+                    <input type="password" id="newUserPass" placeholder="Assign Password" required class="px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-semibold text-slate-600 block">Allowed Sections Access:</label>
+                    <div class="flex flex-wrap gap-4 text-xs font-medium text-slate-700 pt-1">
+                        <label class="flex items-center gap-1.5"><input type="checkbox" id="perm_pos" checked class="accent-indigo-600"> Billing / POS</label>
+                        <label class="flex items-center gap-1.5"><input type="checkbox" id="perm_inventory" class="accent-indigo-600"> Stock & Inventory</label>
+                        <label class="flex items-center gap-1.5"><input type="checkbox" id="perm_patients" class="accent-indigo-600"> Patient Records</label>
+                        <label class="flex items-center gap-1.5"><input type="checkbox" id="perm_accounts" class="accent-indigo-600"> Sales & Accounts</label>
+                        <label class="flex items-center gap-1.5"><input type="checkbox" id="perm_settings" class="accent-indigo-600"> Backup & Restore</label>
+                    </div>
+                </div>
+                <button type="submit" class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-sm">
+                    + Add New User
+                </button>
+            </form>
+
+            <!-- Users List Table -->
+            <h4 class="text-xs font-extrabold uppercase text-slate-600 tracking-wider mb-2">Existing System Users</h4>
+            <div class="overflow-x-auto border border-slate-200 rounded-xl">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-slate-100 font-bold text-slate-600 border-b">
+                        <tr>
+                            <th class="p-3">Username</th>
+                            <th class="p-3">Password</th>
+                            <th class="p-3">Access Allowed</th>
+                            <th class="p-3 text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersListTable" class="divide-y divide-slate-100">
+                        <!-- Dynamic User Rows -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADMIN MODAL: LOGIN DEVICES LOG (DANISH ONLY) -->
+    <div id="loginDevicesModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm hidden">
+        <div class="w-full max-w-4xl p-6 bg-white border border-slate-200 shadow-2xl rounded-2xl max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4 border-b pb-3">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-laptop-medical text-cyan-600"></i> Connected Devices & Login Activity History
+                    </h3>
+                    <p class="text-xs text-slate-500">Track computers, IP details, and locations logging into Danish Medical Store</p>
+                </div>
+                <button onclick="toggleModal('loginDevicesModal', false)" class="text-slate-400 hover:text-slate-700">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div class="overflow-x-auto border border-slate-200 rounded-xl">
+                <table class="w-full text-left text-xs text-slate-700">
+                    <thead class="bg-slate-100 font-bold text-slate-700 border-b">
+                        <tr>
+                            <th class="p-3">Time & Date</th>
+                            <th class="p-3">User</th>
+                            <th class="p-3">System / Device OS</th>
+                            <th class="p-3">Browser</th>
+                            <th class="p-3">IP Address</th>
+                            <th class="p-3">Location / Region</th>
+                        </tr>
+                    </thead>
+                    <tbody id="devicesListTable" class="divide-y divide-slate-100">
+                        <!-- Dynamic Device Logs -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="mt-4 text-right">
+                <button onclick="clearDeviceLogs()" class="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl text-xs font-bold transition">
+                    Clear Log History
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- ADD MEDICINE MODAL -->
@@ -466,24 +580,45 @@
         let salesHistory = JSON.parse(localStorage.getItem('danish_sales')) || [];
         let cart = [];
 
+        // USER ACCOUNTS & RIGHTS DATA (DEFAULT MAIN ADMIN: danish / 7869)
+        let systemUsers = JSON.parse(localStorage.getItem('danish_users')) || [
+            { username: 'danish', pass: '7869', rights: ['pos', 'inventory', 'patients', 'accounts', 'settings'], isAdmin: true }
+        ];
+
+        // LOGGED IN DEVICES DATA STORE
+        let deviceLogs = JSON.parse(localStorage.getItem('danish_device_logs')) || [];
+
+        let currentUser = null;
+
         // CHECK LOGIN PERSISTENCE ON LOAD
         window.addEventListener('DOMContentLoaded', () => {
-            const isLogged = localStorage.getItem('danish_logged_in');
-            if(isLogged === 'true') {
-                document.getElementById('loginModal').classList.add('hidden');
-                document.getElementById('app').classList.remove('hidden');
-                init();
+            const savedUser = localStorage.getItem('danish_active_user');
+            if(savedUser) {
+                const found = systemUsers.find(u => u.username === savedUser);
+                if(found) {
+                    currentUser = found;
+                    document.getElementById('loginModal').classList.add('hidden');
+                    document.getElementById('app').classList.remove('hidden');
+                    init();
+                }
             }
         });
 
-        // LOGIN SYSTEM (USERNAME: danish | PASSWORD: 7869)
-        function handleLogin(e) {
+        // LOGIN SYSTEM & DEVICE LOGGING
+        async function handleLogin(e) {
             e.preventDefault();
-            const user = document.getElementById('loginUsername').value.trim();
-            const pass = document.getElementById('loginPassword').value.trim();
+            const userVal = document.getElementById('loginUsername').value.trim().toLowerCase();
+            const passVal = document.getElementById('loginPassword').value.trim();
             
-            if(user === 'danish' && pass === '7869') {
-                localStorage.setItem('danish_logged_in', 'true');
+            const matchedUser = systemUsers.find(u => u.username.toLowerCase() === userVal && u.pass === passVal);
+
+            if(matchedUser) {
+                currentUser = matchedUser;
+                localStorage.setItem('danish_active_user', matchedUser.username);
+                
+                // Track Login Device Details
+                await recordDeviceLog(matchedUser.username);
+
                 document.getElementById('loginModal').classList.add('hidden');
                 document.getElementById('app').classList.remove('hidden');
                 init();
@@ -492,8 +627,54 @@
             }
         }
 
+        // DETECT & RECORD DEVICE DETAILS
+        async function recordDeviceLog(username) {
+            const userAgent = navigator.userAgent;
+            let os = "Unknown OS";
+            if (userAgent.indexOf("Win") !== -1) os = "Windows PC";
+            if (userAgent.indexOf("Mac") !== -1) os = "macOS";
+            if (userAgent.indexOf("Linux") !== -1) os = "Linux PC";
+            if (userAgent.indexOf("Android") !== -1) os = "Android Mobile";
+            if (userAgent.indexOf("like Mac") !== -1) os = "iPhone / iOS";
+
+            let browser = "Web Browser";
+            if (userAgent.indexOf("Chrome") !== -1) browser = "Google Chrome";
+            else if (userAgent.indexOf("Firefox") !== -1) browser = "Mozilla Firefox";
+            else if (userAgent.indexOf("Safari") !== -1) browser = "Safari";
+            else if (userAgent.indexOf("Edg") !== -1) browser = "Microsoft Edge";
+
+            let ip = "192.168.1.10";
+            let location = "Ahmad Puri, Pakistan";
+
+            try {
+                const res = await fetch('https://ipapi.co/json/');
+                if(res.ok) {
+                    const data = await res.json();
+                    ip = data.ip || ip;
+                    location = `${data.city || 'Ahmad Puri'}, ${data.country_name || 'Pakistan'}`;
+                }
+            } catch(e) {
+                // Fallback local context if network offline
+            }
+
+            const newLog = {
+                id: Date.now(),
+                time: new Date().toLocaleString(),
+                user: username,
+                os: `${os} (${screen.width}x${screen.height})`,
+                browser: browser,
+                ip: ip,
+                location: location
+            };
+
+            deviceLogs.unshift(newLog);
+            if(deviceLogs.length > 50) deviceLogs.pop(); // keep last 50 entries
+            localStorage.setItem('danish_device_logs', JSON.stringify(deviceLogs));
+        }
+
         function logout() {
-            localStorage.removeItem('danish_logged_in');
+            localStorage.removeItem('danish_active_user');
+            currentUser = null;
             document.getElementById('loginModal').classList.remove('hidden');
             document.getElementById('app').classList.add('hidden');
             document.getElementById('loginUsername').value = '';
@@ -501,8 +682,47 @@
             document.getElementById('loginError').classList.add('hidden');
         }
 
+        // APPLY USER RIGHTS & CONTROL UI ACCORDING TO LOGGED IN USER
+        function applyUserRightsUI() {
+            if(!currentUser) return;
+
+            document.getElementById('activeUserLabel').innerText = currentUser.username;
+
+            const allTabs = ['pos', 'inventory', 'patients', 'accounts', 'settings'];
+            
+            allTabs.forEach(tab => {
+                const btn = document.getElementById(`btn-${tab}`);
+                if(btn) {
+                    if(currentUser.rights.includes(tab) || currentUser.isAdmin) {
+                        btn.classList.remove('hidden');
+                    } else {
+                        btn.classList.add('hidden');
+                    }
+                }
+            });
+
+            // Admin Only Controls (Visible strictly for 'danish' / admin)
+            const adminTopControls = document.getElementById('adminTopControls');
+            if(adminTopControls) {
+                if(currentUser.username.toLowerCase() === 'danish' || currentUser.isAdmin) {
+                    adminTopControls.classList.remove('hidden');
+                } else {
+                    adminTopControls.classList.add('hidden');
+                }
+            }
+
+            // Default to first accessible tab
+            const firstTab = allTabs.find(t => currentUser.rights.includes(t)) || 'pos';
+            switchTab(firstTab);
+        }
+
         // NAVIGATION CONTROL
         function switchTab(tab) {
+            if(currentUser && !currentUser.rights.includes(tab) && !currentUser.isAdmin) {
+                alert('Access Denied! You do not have permissions for this section.');
+                return;
+            }
+
             ['pos', 'inventory', 'patients', 'accounts', 'settings'].forEach(t => {
                 const el = document.getElementById(`view-${t}`);
                 if (el) el.classList.add('hidden');
@@ -518,16 +738,110 @@
 
         function toggleModal(id, show) {
             document.getElementById(id).classList.toggle('hidden', !show);
+            if(id === 'userRightsModal' && show) renderUsersList();
         }
 
         // INITIALIZATION
         function init() {
+            applyUserRightsUI();
             renderInventoryDropdown();
             renderInventoryTable();
             renderPatients();
             renderAccounts();
             updateReceipt();
             updateSidebarAlerts();
+        }
+
+        // USER RIGHTS MANAGEMENT LOGIC (DANISH ONLY)
+        function saveUserAccount(e) {
+            e.preventDefault();
+            const uName = document.getElementById('newUsername').value.trim();
+            const uPass = document.getElementById('newUserPass').value.trim();
+
+            if(!uName || !uPass) return;
+            if(systemUsers.some(u => u.username.toLowerCase() === uName.toLowerCase())) {
+                alert('User with this username already exists!');
+                return;
+            }
+
+            const rights = [];
+            if(document.getElementById('perm_pos').checked) rights.push('pos');
+            if(document.getElementById('perm_inventory').checked) rights.push('inventory');
+            if(document.getElementById('perm_patients').checked) rights.push('patients');
+            if(document.getElementById('perm_accounts').checked) rights.push('accounts');
+            if(document.getElementById('perm_settings').checked) rights.push('settings');
+
+            systemUsers.push({
+                username: uName,
+                pass: uPass,
+                rights: rights,
+                isAdmin: false
+            });
+
+            localStorage.setItem('danish_users', JSON.stringify(systemUsers));
+            alert(`User '${uName}' created successfully with assigned rights!`);
+            e.target.reset();
+            renderUsersList();
+        }
+
+        function deleteUser(username) {
+            if(username.toLowerCase() === 'danish') {
+                alert('Main Admin account cannot be deleted!');
+                return;
+            }
+            if(confirm(`Are you sure you want to remove user '${username}'?`)) {
+                systemUsers = systemUsers.filter(u => u.username !== username);
+                localStorage.setItem('danish_users', JSON.stringify(systemUsers));
+                renderUsersList();
+            }
+        }
+
+        function renderUsersList() {
+            const tbody = document.getElementById('usersListTable');
+            tbody.innerHTML = systemUsers.map(u => `
+                <tr class="hover:bg-slate-50">
+                    <td class="p-3 font-bold text-slate-800">${u.username} ${u.isAdmin ? '<span class="text-[10px] bg-cyan-100 text-cyan-800 px-1.5 py-0.5 rounded font-extrabold ml-1">ADMIN</span>' : ''}</td>
+                    <td class="p-3 font-mono text-slate-600">${u.pass}</td>
+                    <td class="p-3 flex flex-wrap gap-1">
+                        ${u.rights.map(r => `<span class="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded text-[10px] font-semibold border border-indigo-200 uppercase">${r}</span>`).join('')}
+                    </td>
+                    <td class="p-3 text-center">
+                        ${!u.isAdmin ? `<button onclick="deleteUser('${u.username}')" class="text-rose-600 hover:underline font-bold text-xs"><i class="fa-solid fa-user-minus"></i> Delete</button>` : '<span class="text-slate-400 font-bold">-</span>'}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // LOGIN DEVICES LOGIC (DANISH ONLY)
+        function openDevicesModal() {
+            renderDevicesList();
+            toggleModal('loginDevicesModal', true);
+        }
+
+        function renderDevicesList() {
+            const tbody = document.getElementById('devicesListTable');
+            if(deviceLogs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400">No login device records found.</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = deviceLogs.map(log => `
+                <tr class="hover:bg-slate-50 font-medium">
+                    <td class="p-3 text-slate-500 font-mono text-[11px]">${log.time}</td>
+                    <td class="p-3 font-bold text-slate-800">${log.user}</td>
+                    <td class="p-3 text-slate-700"><i class="fa-solid fa-laptop text-slate-400 mr-1"></i> ${log.os}</td>
+                    <td class="p-3 text-cyan-700 font-semibold">${log.browser}</td>
+                    <td class="p-3 font-mono text-amber-600">${log.ip}</td>
+                    <td class="p-3 text-slate-600"><i class="fa-solid fa-location-dot text-rose-500 mr-1"></i> ${log.location}</td>
+                </tr>
+            `).join('');
+        }
+
+        function clearDeviceLogs() {
+            if(confirm('Are you sure you want to clear all login device history logs?')) {
+                deviceLogs = [];
+                localStorage.setItem('danish_device_logs', JSON.stringify(deviceLogs));
+                renderDevicesList();
+            }
         }
 
         function updateSidebarAlerts() {
@@ -828,7 +1142,9 @@
         function downloadBackup() {
             const data = {
                 inventory: inventory,
-                salesHistory: salesHistory
+                salesHistory: salesHistory,
+                systemUsers: systemUsers,
+                deviceLogs: deviceLogs
             };
             const jsonStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data));
             const downloadAnchor = document.createElement('a');
@@ -854,8 +1170,14 @@
                     if(data.inventory && data.salesHistory) {
                         inventory = data.inventory;
                         salesHistory = data.salesHistory;
+                        if(data.systemUsers) systemUsers = data.systemUsers;
+                        if(data.deviceLogs) deviceLogs = data.deviceLogs;
+
                         localStorage.setItem('danish_inventory', JSON.stringify(inventory));
                         localStorage.setItem('danish_sales', JSON.stringify(salesHistory));
+                        localStorage.setItem('danish_users', JSON.stringify(systemUsers));
+                        localStorage.setItem('danish_device_logs', JSON.stringify(deviceLogs));
+                        
                         alert('Data Restored Successfully!');
                         init();
                     } else {
