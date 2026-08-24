@@ -16,6 +16,9 @@
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
         .receipt-text { color: #000000 !important; }
+        .bg-emerald-theme { background-color: #0f6c53; }
+        .text-emerald-theme { color: #0f6c53; }
+        .border-emerald-theme { border-color: #0f6c53; }
         @media print {
             body * { visibility: hidden; }
             #printable-receipt, #printable-receipt *, #modal-printable-receipt, #modal-printable-receipt * { visibility: visible; }
@@ -23,65 +26,116 @@
         }
     </style>
 </head>
-<body class="bg-slate-100 text-slate-800 min-h-screen antialiased">
+<body class="bg-emerald-50/30 text-slate-800 min-h-screen antialiased flex flex-col">
 
-    <!-- ULTRA PREMIUM LOGIN OVERLAY -->
-    <div id="loginModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-xl transition-all duration-300">
-        <div class="w-full max-w-md p-8 bg-slate-900/95 border border-slate-700/60 rounded-3xl shadow-2xl relative overflow-hidden backdrop-blur-2xl">
-            <div class="absolute -top-16 -right-16 w-48 h-48 bg-teal-500/20 rounded-full blur-3xl pointer-events-none"></div>
-            <div class="absolute -bottom-16 -left-16 w-48 h-48 bg-cyan-500/20 rounded-full blur-3xl pointer-events-none"></div>
-            
-            <div class="text-center mb-8 relative z-10">
-                <div class="inline-flex p-4 bg-gradient-to-tr from-cyan-500/20 to-teal-500/20 border border-teal-500/30 rounded-2xl mb-3 text-cyan-400 shadow-inner">
-                    <i class="fa-solid fa-notes-medical text-4xl"></i>
+    <!-- ULTRA PREMIUM LIGHT LOGIN OVERLAY (DANISH LAB MATCHING DESIGN) -->
+    <div id="loginModal" class="fixed inset-0 z-50 flex flex-col bg-[#f8faf9] justify-between p-6 sm:p-10 transition-all duration-300 overflow-y-auto">
+        <!-- Top Left Brand Header -->
+        <div class="flex items-center gap-3">
+            <div class="w-11 h-11 bg-[#0f6c53] text-white rounded-2xl flex items-center justify-center shadow-md">
+                <i class="fa-solid fa-[#0f6c53] fa-prescription-bottle-medical text-xl"></i>
+            </div>
+            <div>
+                <h1 class="text-base font-extrabold uppercase tracking-wide text-slate-900 leading-none">Danish Medical Store</h1>
+                <p class="text-[11px] font-semibold tracking-wider text-slate-400 uppercase mt-1">Advanced Pharmacy ERP & POS</p>
+            </div>
+        </div>
+
+        <!-- Main Split Content Area -->
+        <div class="my-auto py-8 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center max-w-6xl w-full mx-auto">
+            <!-- Left Side Vector Illustration -->
+            <div class="hidden lg:flex flex-col items-center justify-center text-center p-8">
+                <div class="relative w-80 h-80 flex items-center justify-center">
+                    <div class="absolute inset-0 bg-emerald-100/60 rounded-full blur-2xl"></div>
+                    <div class="relative z-10 w-72 h-72 rounded-full border-2 border-emerald-200/80 bg-emerald-50/50 flex items-center justify-center p-6 shadow-inner">
+                        <div class="w-56 h-64 bg-white rounded-2xl border border-slate-200 shadow-xl flex flex-col justify-between p-5 relative overflow-hidden">
+                            <div class="w-16 h-16 bg-emerald-500 rounded-full mx-auto flex items-center justify-center text-white text-2xl shadow-md border-4 border-emerald-100">
+                                <i class="fa-solid fa-plus"></i>
+                            </div>
+                            <div class="space-y-2">
+                                <div class="h-2.5 bg-slate-200 rounded-full w-full"></div>
+                                <div class="h-2.5 bg-slate-200 rounded-full w-3/4"></div>
+                                <div class="h-2.5 bg-slate-100 rounded-full w-1/2"></div>
+                            </div>
+                            <div class="flex gap-2">
+                                <div class="h-6 bg-emerald-100 rounded-lg flex-1"></div>
+                                <div class="h-6 bg-emerald-500 rounded-lg flex-1"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <h2 class="text-2xl font-extrabold text-white tracking-wide bg-gradient-to-r from-white via-slate-100 to-cyan-200 bg-clip-text text-transparent">Danish Medical Store</h2>
-                <p class="text-xs text-cyan-400 font-medium tracking-wider uppercase mt-1">Advanced Pharmacy ERP & POS</p>
+                <p class="text-xs font-semibold text-slate-400 mt-6 uppercase tracking-widest">Quality Healthcare • Trusted Pharmacy</p>
             </div>
 
-            <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4 relative z-10">
-                <div>
-                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Username</label>
-                    <div class="relative">
-                        <input type="text" id="loginUsername" placeholder="Enter username" required
-                            class="w-full px-4 py-3 bg-slate-800/80 border border-slate-700/80 rounded-xl focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 text-white placeholder-slate-500 text-sm transition">
-                        <i class="fa-solid fa-user absolute right-4 top-3.5 text-slate-500 text-sm"></i>
+            <!-- Right Side Clean Login Form -->
+            <div class="w-full max-w-md mx-auto">
+                <div class="bg-white border border-slate-200/80 rounded-3xl p-8 sm:p-10 shadow-xl shadow-slate-200/50 text-center">
+                    <div class="w-14 h-14 bg-[#0f6c53] text-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-emerald-900/20">
+                        <i class="fa-solid fa-prescription-bottle-medical text-2xl"></i>
                     </div>
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Password</label>
-                    <div class="relative">
-                        <input type="password" id="loginPassword" placeholder="Enter password" required
-                            class="w-full px-4 py-3 bg-slate-800/80 border border-slate-700/80 rounded-xl focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 text-white placeholder-slate-500 text-sm transition">
-                        <i class="fa-solid fa-lock absolute right-4 top-3.5 text-slate-500 text-sm"></i>
+                    <h2 class="text-xl font-extrabold text-slate-900 tracking-wide uppercase">Danish Medical Store</h2>
+                    <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-0.5 mb-8">Advanced Pharmacy ERP & POS</p>
+
+                    <div class="text-left mb-6">
+                        <h3 class="text-lg font-bold text-slate-800">Login</h3>
+                        <p class="text-xs text-slate-400 mt-0.5">Enter your username and password to sign in!</p>
                     </div>
+
+                    <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4 text-left">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5">Username:</label>
+                            <input type="text" id="loginUsername" placeholder="Enter username" required
+                                class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#0f6c53] focus:bg-white text-slate-800 placeholder-slate-400 text-sm transition font-medium">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5">Password:</label>
+                            <div class="relative">
+                                <input type="password" id="loginPassword" placeholder="Enter password" required
+                                    class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#0f6c53] focus:bg-white text-slate-800 placeholder-slate-400 text-sm transition font-medium">
+                                <i class="fa-solid fa-eye absolute right-4 top-3.5 text-slate-400 text-sm cursor-pointer"></i>
+                            </div>
+                        </div>
+                        <button type="submit" 
+                            class="w-full mt-2 py-3.5 bg-[#0f6c53] hover:bg-[#0b523f] font-extrabold rounded-xl text-white shadow-lg shadow-emerald-900/20 transition duration-200 text-sm uppercase tracking-wider">
+                            LOGIN
+                        </button>
+                        <p id="loginError" class="text-rose-500 text-xs text-center font-bold hidden">Incorrect Username or Password.</p>
+                    </form>
                 </div>
-                <button type="submit" 
-                    class="w-full mt-2 py-3.5 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 font-bold rounded-xl text-white shadow-lg shadow-cyan-950/50 transition duration-200 active:scale-[0.99] text-sm">
-                    Unlock System
-                </button>
-                <p id="loginError" class="text-rose-400 text-xs text-center font-medium hidden">Incorrect Username or Password.</p>
-            </form>
+
+                <!-- Footer Details -->
+                <div class="text-center text-[11px] text-slate-500 font-medium space-y-1 mt-8">
+                    <p class="font-bold text-slate-700">Application Developed by <span class="text-[#0f6c53]">Muhammad Danish</span></p>
+                    <p>Website: <a href="https://facebook.com/danishy51" target="_blank" class="hover:underline text-slate-600">facebook.com/danishy51</a></p>
+                    <p>Email: <a href="mailto:danishy51@gmail.com" class="hover:underline text-slate-600">danishy51@gmail.com</a></p>
+                    <p>For Support: <span class="font-bold text-slate-700">03067488053</span></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Tagline -->
+        <div class="text-center text-xs font-semibold text-slate-400 uppercase tracking-widest pt-4">
+            Accurate Results. Trusted Care.
         </div>
     </div>
 
     <!-- MAIN DASHBOARD -->
-    <div id="app" class="hidden flex h-screen overflow-hidden">
+    <div id="app" class="hidden flex h-screen overflow-hidden bg-slate-100">
         <!-- SIDEBAR -->
         <aside class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col justify-between text-white shrink-0">
             <div>
                 <div class="p-6 border-b border-slate-800/80 flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+                    <div class="w-10 h-10 rounded-xl bg-[#0f6c53] border border-emerald-400/30 flex items-center justify-center text-white">
                         <i class="fa-solid fa-clinic-medical text-xl"></i>
                     </div>
                     <div>
                         <h1 class="font-bold text-sm leading-tight text-slate-100">Danish Medical</h1>
-                        <span class="text-[10px] text-cyan-400 font-semibold uppercase tracking-wider">Store Portal Pro</span>
+                        <span class="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider">Store Portal Pro</span>
                     </div>
                 </div>
                 <nav class="p-4 space-y-1.5">
                     <button onclick="switchTab('pos')" id="btn-pos" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm text-white bg-slate-800 border border-slate-700 shadow-sm transition">
-                        <i class="fa-solid fa-cash-register text-cyan-400"></i> Billing & POS
+                        <i class="fa-solid fa-cash-register text-emerald-400"></i> Billing & POS
                     </button>
                     <button onclick="switchTab('inventory')" id="btn-inventory" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 transition">
                         <i class="fa-solid fa-boxes-stacked text-teal-400"></i> Stock / Inventory
@@ -113,7 +167,7 @@
             <div class="p-4 border-t border-slate-800/80">
                 <div class="mb-2 text-xs text-slate-400 px-2 flex justify-between">
                     <span>Active User:</span>
-                    <span id="activeUserLabel" class="text-cyan-400 font-bold uppercase">danish</span>
+                    <span id="activeUserLabel" class="text-emerald-400 font-bold uppercase">danish</span>
                 </div>
                 <button onclick="logout()" class="w-full flex items-center gap-3 px-4 py-2.5 text-xs text-rose-400 hover:bg-rose-500/10 rounded-xl transition font-semibold">
                     <i class="fa-solid fa-right-from-bracket"></i> Lock System
@@ -130,23 +184,23 @@
                 <div class="col-span-7 bg-white border border-slate-200/80 shadow-sm rounded-2xl p-6 flex flex-col justify-between overflow-y-auto">
                     <div>
                         <h2 class="text-base font-bold text-slate-800 mb-4 flex items-center justify-between">
-                            <span class="flex items-center gap-2"><i class="fa-solid fa-user-plus text-cyan-600"></i> Patient & Sale Details</span>
-                            <span class="text-xs font-semibold px-2.5 py-1 bg-cyan-50 text-cyan-700 rounded-lg border border-cyan-200">Express POS Terminal</span>
+                            <span class="flex items-center gap-2"><i class="fa-solid fa-user-plus text-[#0f6c53]"></i> Patient & Sale Details</span>
+                            <span class="text-xs font-semibold px-2.5 py-1 bg-emerald-50 text-[#0f6c53] rounded-lg border border-emerald-200">Express POS Terminal</span>
                         </h2>
                         
                         <!-- Patient Info Fields -->
                         <div class="grid grid-cols-3 gap-3 mb-6">
                             <div>
                                 <label class="text-xs font-semibold text-slate-600 mb-1 block">Patient Name</label>
-                                <input type="text" id="custName" oninput="updateReceipt()" placeholder="Patient Full Name" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-cyan-500">
+                                <input type="text" id="custName" oninput="updateReceipt()" placeholder="Patient Full Name" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-[#0f6c53]">
                             </div>
                             <div>
                                 <label class="text-xs font-semibold text-slate-600 mb-1 block">Mobile Number</label>
-                                <input type="text" id="custPhone" oninput="updateReceipt()" placeholder="0300-0000000" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-cyan-500">
+                                <input type="text" id="custPhone" oninput="updateReceipt()" placeholder="0300-0000000" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-[#0f6c53]">
                             </div>
                             <div>
                                 <label class="text-xs font-semibold text-slate-600 mb-1 block">Age</label>
-                                <input type="number" id="custAge" oninput="updateReceipt()" placeholder="e.g. 25" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-cyan-500">
+                                <input type="number" id="custAge" oninput="updateReceipt()" placeholder="e.g. 25" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-[#0f6c53]">
                             </div>
                         </div>
 
@@ -165,11 +219,11 @@
                             </div>
 
                             <div class="flex gap-2 mb-4">
-                                <select id="posMedSelect" class="flex-1 px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-cyan-500">
+                                <select id="posMedSelect" class="flex-1 px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-[#0f6c53]">
                                     <option value="">Select Item from Inventory...</option>
                                 </select>
-                                <input type="number" id="posMedQty" value="1" min="1" class="w-20 px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-cyan-500" placeholder="Qty">
-                                <button onclick="addItemToCart()" class="px-5 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-xl text-sm font-semibold transition shadow-sm">
+                                <input type="number" id="posMedQty" value="1" min="1" class="w-20 px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-[#0f6c53]" placeholder="Qty">
+                                <button onclick="addItemToCart()" class="px-5 py-2 bg-[#0f6c53] hover:bg-[#0b523f] text-white rounded-xl text-sm font-semibold transition shadow-sm">
                                     <i class="fa-solid fa-plus"></i> Add
                                 </button>
                             </div>
@@ -199,7 +253,7 @@
                         <div class="grid grid-cols-2 gap-4 mb-4">
                             <div>
                                 <label class="text-xs font-semibold text-slate-600 block mb-1">Payment Method</label>
-                                <select id="paymentMethod" class="w-full px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-cyan-500">
+                                <select id="paymentMethod" class="w-full px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-[#0f6c53]">
                                     <option value="Cash">Cash Payment</option>
                                     <option value="JazzCash / EasyPaisa">JazzCash / EasyPaisa</option>
                                     <option value="Debit / Credit Card">Debit / Credit Card</option>
@@ -207,10 +261,10 @@
                             </div>
                             <div>
                                 <label class="text-xs font-semibold text-slate-600 block mb-1">Discount (%)</label>
-                                <input type="number" id="posDiscount" value="0" min="0" max="100" oninput="updateReceipt()" class="w-full px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-xl text-right text-sm text-slate-800 focus:outline-none focus:border-cyan-500">
+                                <input type="number" id="posDiscount" value="0" min="0" max="100" oninput="updateReceipt()" class="w-full px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-xl text-right text-sm text-slate-800 focus:outline-none focus:border-[#0f6c53]">
                             </div>
                         </div>
-                        <button onclick="completeSale()" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2 text-sm">
+                        <button onclick="completeSale()" class="w-full py-3.5 bg-[#0f6c53] hover:bg-[#0b523f] text-white font-bold rounded-xl transition shadow-md shadow-emerald-900/20 flex items-center justify-center gap-2 text-sm">
                             <i class="fa-solid fa-circle-check"></i> Complete Sale & Save Record
                         </button>
                     </div>
@@ -220,7 +274,7 @@
                 <div class="col-span-5 bg-white border border-slate-200/80 shadow-sm rounded-2xl p-6 flex flex-col justify-between">
                     <div>
                         <h2 class="text-base font-bold text-slate-800 mb-4 flex items-center gap-2">
-                            <i class="fa-solid fa-receipt text-cyan-600"></i> Live Invoice Preview
+                            <i class="fa-solid fa-receipt text-[#0f6c53]"></i> Live Invoice Preview
                         </h2>
                         
                         <!-- Printable Receipt Area -->
@@ -277,8 +331,8 @@
                         <p class="text-xs text-slate-500">Manage medicine batches, suppliers, and stock levels</p>
                     </div>
                     <div class="flex gap-2">
-                        <input type="text" id="inventorySearch" oninput="renderInventoryTable()" placeholder="Search stock..." class="px-4 py-2 bg-white border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-cyan-500 shadow-sm">
-                        <button onclick="toggleModal('medModal', true)" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-xl text-sm font-semibold flex items-center gap-2 shadow-sm transition">
+                        <input type="text" id="inventorySearch" oninput="renderInventoryTable()" placeholder="Search stock..." class="px-4 py-2 bg-white border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-[#0f6c53] shadow-sm">
+                        <button onclick="toggleModal('medModal', true)" class="px-4 py-2 bg-[#0f6c53] hover:bg-[#0b523f] text-white rounded-xl text-sm font-semibold flex items-center gap-2 shadow-sm transition">
                             <i class="fa-solid fa-plus"></i> Add New Medicine
                         </button>
                     </div>
@@ -315,7 +369,7 @@
                         <button onclick="exportPatientsToPDF()" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-sm font-semibold flex items-center gap-2 shadow-sm transition">
                             <i class="fa-solid fa-file-pdf text-rose-400"></i> Export Records PDF
                         </button>
-                        <input type="text" id="patientSearch" oninput="renderPatients()" placeholder="Search patient name or phone..." class="w-72 px-4 py-2 bg-white border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-cyan-500 shadow-sm">
+                        <input type="text" id="patientSearch" oninput="renderPatients()" placeholder="Search patient name or phone..." class="w-72 px-4 py-2 bg-white border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-[#0f6c53] shadow-sm">
                     </div>
                 </div>
 
@@ -343,7 +397,7 @@
             <section id="view-accounts" class="hidden space-y-6">
                 <div class="flex justify-between items-center">
                     <h2 class="text-xl font-bold text-slate-800">Financial Overview & Analytics</h2>
-                    <button onclick="exportAccountsPDF()" class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-sm font-semibold flex items-center gap-2 shadow-sm transition">
+                    <button onclick="exportAccountsPDF()" class="px-4 py-2 bg-[#0f6c53] hover:bg-[#0b523f] text-white rounded-xl text-sm font-semibold flex items-center gap-2 shadow-sm transition">
                         <i class="fa-solid fa-file-invoice text-emerald-300"></i> Download Sales Report
                     </button>
                 </div>
@@ -351,11 +405,11 @@
                 <div class="grid grid-cols-4 gap-6">
                     <div class="p-6 bg-white border border-slate-200/80 shadow-sm rounded-2xl">
                         <span class="text-xs text-slate-500 font-bold uppercase tracking-wider">Total Revenue</span>
-                        <h3 class="text-3xl font-extrabold text-emerald-600 mt-2">Rs. <span id="accTotalRevenue">0</span></h3>
+                        <h3 class="text-3xl font-extrabold text-[#0f6c53] mt-2">Rs. <span id="accTotalRevenue">0</span></h3>
                     </div>
                     <div class="p-6 bg-white border border-slate-200/80 shadow-sm rounded-2xl">
                         <span class="text-xs text-slate-500 font-bold uppercase tracking-wider">Total Orders</span>
-                        <h3 class="text-3xl font-extrabold text-cyan-600 mt-2"><span id="accTotalSales">0</span></h3>
+                        <h3 class="text-3xl font-extrabold text-[#0f6c53] mt-2"><span id="accTotalSales">0</span></h3>
                     </div>
                     <div class="p-6 bg-white border border-slate-200/80 shadow-sm rounded-2xl">
                         <span class="text-xs text-slate-500 font-bold uppercase tracking-wider">Inventory Medicines</span>
@@ -380,7 +434,7 @@
                         <button onclick="toggleModal('userRightsModal', true)" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs flex items-center gap-2 shadow-sm transition">
                             <i class="fa-solid fa-user-shield"></i> User Rights Management
                         </button>
-                        <button onclick="openDevicesModal()" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white font-bold rounded-xl text-xs flex items-center gap-2 shadow-sm transition">
+                        <button onclick="openDevicesModal()" class="px-4 py-2 bg-[#0f6c53] hover:bg-[#0b523f] text-white font-bold rounded-xl text-xs flex items-center gap-2 shadow-sm transition">
                             <i class="fa-solid fa-laptop-code"></i> Login Devices Log
                         </button>
                     </div>
@@ -388,9 +442,9 @@
 
                 <div class="grid grid-cols-2 gap-6">
                     <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-                        <h3 class="font-bold text-base text-slate-800 flex items-center gap-2"><i class="fa-solid fa-download text-cyan-600"></i> Backup System Data</h3>
+                        <h3 class="font-bold text-base text-slate-800 flex items-center gap-2"><i class="fa-solid fa-download text-[#0f6c53]"></i> Backup System Data</h3>
                         <p class="text-xs text-slate-500">Download a full backup of all inventory items, sales history, users, and device logs.</p>
-                        <button onclick="downloadBackup()" class="px-5 py-2.5 bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold rounded-xl transition">
+                        <button onclick="downloadBackup()" class="px-5 py-2.5 bg-[#0f6c53] hover:bg-[#0b523f] text-white text-xs font-bold rounded-xl transition">
                             Download Backup File (.json)
                         </button>
                     </div>
@@ -469,7 +523,7 @@
             <div class="flex justify-between items-center mb-4 border-b pb-3">
                 <div>
                     <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
-                        <i class="fa-solid fa-laptop-medical text-cyan-600"></i> Connected Devices & Login Activity History
+                        <i class="fa-solid fa-laptop-medical text-[#0f6c53]"></i> Connected Devices & Login Activity History
                     </h3>
                     <p class="text-xs text-slate-500">Track computers, IP details, and locations logging into Danish Medical Store</p>
                 </div>
@@ -509,19 +563,19 @@
         <div class="w-full max-w-lg p-6 bg-white border border-slate-200 shadow-2xl rounded-2xl">
             <h3 class="text-lg font-bold text-slate-800 mb-4">Add New Medicine / Item</h3>
             <form onsubmit="saveMedicine(event)" class="space-y-4">
-                <input type="text" id="mName" placeholder="Medicine Name (e.g., Panadol 500mg)" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-cyan-500">
+                <input type="text" id="mName" placeholder="Medicine Name (e.g., Panadol 500mg)" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-[#0f6c53]">
                 <div class="grid grid-cols-2 gap-3">
-                    <input type="text" id="mBatch" placeholder="Batch / Barcode No." required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-cyan-500">
-                    <input type="text" id="mSupplier" placeholder="Supplier / Company Name" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-cyan-500">
+                    <input type="text" id="mBatch" placeholder="Batch / Barcode No." required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-[#0f6c53]">
+                    <input type="text" id="mSupplier" placeholder="Supplier / Company Name" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-[#0f6c53]">
                 </div>
                 <div class="grid grid-cols-3 gap-3">
-                    <input type="date" id="mExpiry" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-cyan-500">
-                    <input type="number" id="mStock" placeholder="Stock Qty" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-cyan-500">
-                    <input type="number" step="0.01" id="mPrice" placeholder="Unit Price (PKR)" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-cyan-500">
+                    <input type="date" id="mExpiry" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-[#0f6c53]">
+                    <input type="number" id="mStock" placeholder="Stock Qty" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-[#0f6c53]">
+                    <input type="number" step="0.01" id="mPrice" placeholder="Unit Price (PKR)" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-[#0f6c53]">
                 </div>
                 <div class="flex justify-end gap-3 pt-2">
                     <button type="button" onclick="toggleModal('medModal', false)" class="px-4 py-2 bg-slate-100 text-slate-600 rounded-xl text-sm font-semibold hover:bg-slate-200">Cancel</button>
-                    <button type="submit" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-xl text-sm font-semibold">Save Medicine</button>
+                    <button type="submit" class="px-4 py-2 bg-[#0f6c53] hover:bg-[#0b523f] text-white rounded-xl text-sm font-semibold">Save Medicine</button>
                 </div>
             </form>
         </div>
@@ -800,7 +854,7 @@
             const tbody = document.getElementById('usersListTable');
             tbody.innerHTML = systemUsers.map(u => `
                 <tr class="hover:bg-slate-50">
-                    <td class="p-3 font-bold text-slate-800">${u.username} ${u.isAdmin ? '<span class="text-[10px] bg-cyan-100 text-cyan-800 px-1.5 py-0.5 rounded font-extrabold ml-1">ADMIN</span>' : ''}</td>
+                    <td class="p-3 font-bold text-slate-800">${u.username} ${u.isAdmin ? '<span class="text-[10px] bg-emerald-100 text-[#0f6c53] px-1.5 py-0.5 rounded font-extrabold ml-1">ADMIN</span>' : ''}</td>
                     <td class="p-3 font-mono text-slate-600">${u.pass}</td>
                     <td class="p-3 flex flex-wrap gap-1">
                         ${u.rights.map(r => `<span class="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded text-[10px] font-semibold border border-indigo-200 uppercase">${r}</span>`).join('')}
@@ -829,7 +883,7 @@
                     <td class="p-3 text-slate-500 font-mono text-[11px]">${log.time}</td>
                     <td class="p-3 font-bold text-slate-800">${log.user}</td>
                     <td class="p-3 text-slate-700"><i class="fa-solid fa-laptop text-slate-400 mr-1"></i> ${log.os}</td>
-                    <td class="p-3 text-cyan-700 font-semibold">${log.browser}</td>
+                    <td class="p-3 text-[#0f6c53] font-semibold">${log.browser}</td>
                     <td class="p-3 font-mono text-amber-600">${log.ip}</td>
                     <td class="p-3 text-slate-600"><i class="fa-solid fa-location-dot text-rose-500 mr-1"></i> ${log.location}</td>
                 </tr>
@@ -1051,7 +1105,7 @@
                     <td class="p-4 font-bold text-emerald-600">Rs. ${s.total.toFixed(2)}</td>
                     <td class="p-4 text-center">
                         <button onclick="viewReceiptSlip(${s.id})" class="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition" title="View Receipt">
-                            <i class="fa-solid fa-eye text-sm text-cyan-600"></i>
+                            <i class="fa-solid fa-eye text-sm text-[#0f6c53]"></i>
                         </button>
                     </td>
                 </tr>
