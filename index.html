@@ -1,1358 +1,409 @@
 <!DOCTYPE html>
-<html lang="ur" dir="ltr">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Danish Medical Store - Advanced Pharmacy POS System</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inconsolata:wght@400;600;700;900&display=swap" rel="stylesheet">
-    <!-- jsPDF & AutoTable for PDF Export -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
-    <!-- QRCode.js Library for Thermal Receipt QR Codes -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; }
-        .font-mono-receipt { font-family: 'Inconsolata', monospace; }
-        .receipt-text { color: #000000 !important; }
-        
-        /* 80mm Thermal Paper Custom Dimensions */
-        .thermal-slip {
-            width: 80mm;
-            max-width: 100%;
-            background: #ffffff;
-            color: #000000 !important;
-            padding: 12px;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-            border-radius: 8px;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Danish Medical Store - ERP & POS</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+  <style>
+    /* CSS Variables for Dynamic Thermal Print Width */
+    :root {
+      --receipt-width: 80mm;
+    }
 
-        /* Strict Print Styles for 80mm Thermal Receipt Printers */
-        @media print {
-            @page {
-                size: 80mm auto;
-                margin: 0mm;
-            }
-            body {
-                background: white !important;
-                margin: 0 !important;
-                padding: 0 !important;
-            }
-            body * {
-                visibility: hidden !important;
-            }
-            #printable-receipt, #printable-receipt *, 
-            #modal-printable-receipt, #modal-printable-receipt *,
-            #public-thermal-view, #public-thermal-view * {
-                visibility: visible !important;
-            }
-            #printable-receipt, #modal-printable-receipt, #public-thermal-view {
-                position: absolute !important;
-                left: 0 !important;
-                top: 0 !important;
-                width: 80mm !important;
-                margin: 0 !important;
-                padding: 8px !important;
-                box-shadow: none !important;
-                border: none !important;
-                color: #000000 !important;
-            }
-        }
-    </style>
+    /* Premium Gold Sidebar Custom Styling */
+    .bg-gold-gradient {
+      background: linear-gradient(135deg, #BF953F 0%, #FCF6BA 25%, #B38728 50%, #FBF5B7 75%, #AA771C 100%);
+    }
+    .text-gold-gradient {
+      background: linear-gradient(135deg, #D4AF37 0%, #FFFDD0 50%, #AA771C 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .gold-border {
+      border-color: rgba(212, 175, 55, 0.3);
+    }
+    .gold-active-tab {
+      background: linear-gradient(90deg, rgba(212, 175, 55, 0.2) 0%, rgba(0, 0, 0, 0) 100%);
+      border-left: 4px solid #D4AF37;
+      color: #FDF6C7 !important;
+    }
+
+    /* Dynamic thermal receipt container preview */
+    .receipt-container {
+      width: var(--receipt-width);
+      max-width: 100%;
+      margin: 0 auto;
+    }
+
+    /* PRINT STYLES - FIXES THERMAL PRINTING ISSUE */
+    @media print {
+      body * {
+        visibility: hidden !important;
+      }
+      #printArea, #printArea * {
+        visibility: visible !important;
+      }
+      #printArea {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: var(--receipt-width) !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+        border: none !important;
+      }
+      @page {
+        size: var(--receipt-width) auto;
+        margin: 0mm;
+      }
+    }
+  </style>
 </head>
-<body class="bg-gradient-to-br from-slate-900 via-emerald-950 to-slate-900 text-slate-800 min-h-screen antialiased flex flex-col">
+<body class="bg-slate-100 font-sans text-slate-800 antialiased flex h-screen overflow-hidden">
 
-    <!-- PUBLIC STANDALONE THERMAL SLIP VIEW (FOR MOBILE QR SCAN - NO EXTRA NAVIGATION/BUTTONS) -->
-    <div id="public-receipt-view" class="hidden min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4">
-        <div id="public-thermal-view" class="thermal-slip font-mono-receipt border border-slate-300">
-            <!-- Dynamic Public Slip Injected Here -->
+  <!-- PREMIUM GOLD SIDEBAR -->
+  <aside class="w-64 bg-slate-950 border-r border-amber-500/20 flex flex-col justify-between z-20 shadow-2xl relative">
+    <!-- Ambient Gold Glow Backlight -->
+    <div class="absolute top-0 left-0 w-full h-40 bg-amber-500/5 blur-3xl pointer-events-none"></div>
+
+    <div>
+      <!-- Brand Header -->
+      <div class="p-5 border-b border-amber-500/20 flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gold-gradient p-0.5 shadow-lg shadow-amber-500/20 flex items-center justify-center">
+          <div class="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
+            <i class="fa-solid font-bold fa-clinic-medical text-amber-400 text-lg"></i>
+          </div>
         </div>
+        <div>
+          <h1 class="font-extrabold text-base tracking-wide text-gold-gradient">DANISH MEDICAL</h1>
+          <p class="text-[10px] text-amber-200/60 tracking-widest uppercase font-semibold">Store Portal Pro</p>
+        </div>
+      </div>
+
+      <!-- Navigation Links -->
+      <nav class="p-3 space-y-1.5 mt-2">
+        <button onclick="switchTab('pos')" id="nav-pos" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium text-slate-400 hover:text-amber-200 hover:bg-slate-900 transition-all gold-active-tab">
+          <i class="fa-solid fa-cash-register text-amber-400"></i>
+          <span>Billing & POS</span>
+        </button>
+        <button onclick="switchTab('inventory')" id="nav-inventory" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium text-slate-400 hover:text-amber-200 hover:bg-slate-900 transition-all">
+          <i class="fa-solid fa-boxes-stacked text-amber-500/70"></i>
+          <span>Stock / Inventory</span>
+        </button>
+        <button onclick="switchTab('patients')" id="nav-patients" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium text-slate-400 hover:text-amber-200 hover:bg-slate-900 transition-all">
+          <i class="fa-solid fa-users text-amber-500/70"></i>
+          <span>Patient Records</span>
+        </button>
+        <button onclick="switchTab('sales')" id="nav-sales" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium text-slate-400 hover:text-amber-200 hover:bg-slate-900 transition-all">
+          <i class="fa-solid fa-chart-line text-amber-500/70"></i>
+          <span>Sales & Accounts</span>
+        </button>
+        <button onclick="switchTab('settings')" id="nav-settings" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium text-slate-400 hover:text-amber-200 hover:bg-slate-900 transition-all">
+          <i class="fa-solid fa-sliders text-amber-500/70"></i>
+          <span>Settings & Control</span>
+        </button>
+      </nav>
     </div>
 
-    <!-- ULTRA PREMIUM LIGHT LOGIN OVERLAY -->
-    <div id="loginModal" class="fixed inset-0 z-50 flex flex-col bg-[#f8faf9] justify-between p-6 sm:p-10 transition-all duration-300 overflow-y-auto">
-        <!-- Top Left Brand Header -->
-        <div class="flex items-center gap-3">
-            <div class="w-11 h-11 bg-[#0f6c53] text-white rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-900/20">
-                <i class="fa-solid fa-prescription-bottle-medical text-xl"></i>
-            </div>
-            <div>
-                <h1 class="text-base font-extrabold uppercase tracking-wide text-slate-900 leading-none">Danish Medical Store</h1>
-                <p class="text-[11px] font-semibold tracking-wider text-slate-400 uppercase mt-1">Advanced Pharmacy ERP & POS</p>
-            </div>
+    <!-- Sidebar Footer Details -->
+    <div class="p-4 border-t border-amber-500/20 bg-slate-950/80">
+      <div class="bg-slate-900/90 rounded-lg p-3 border border-amber-500/10 mb-3 space-y-1">
+        <div class="flex justify-between text-xs text-slate-400">
+          <span>Low Stock:</span>
+          <span class="text-amber-400 font-bold">1</span>
         </div>
-
-        <!-- Main Split Content Area -->
-        <div class="my-auto py-8 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center max-w-6xl w-full mx-auto">
-            <!-- Left Side Graphic -->
-            <div class="hidden lg:flex flex-col items-center justify-center text-center p-8">
-                <div class="relative w-80 h-80 flex items-center justify-center">
-                    <div class="absolute inset-0 bg-emerald-200/50 rounded-full blur-3xl"></div>
-                    <div class="relative z-10 w-72 h-72 rounded-full border-2 border-emerald-300/80 bg-emerald-50/60 flex items-center justify-center p-6 shadow-inner">
-                        <div class="w-56 h-64 bg-white rounded-2xl border border-slate-200 shadow-2xl flex flex-col justify-between p-5 relative overflow-hidden">
-                            <div class="w-16 h-16 bg-[#0f6c53] rounded-full mx-auto flex items-center justify-center text-white text-2xl shadow-md">
-                                <i class="fa-solid fa-plus"></i>
-                            </div>
-                            <div class="space-y-2">
-                                <div class="h-2.5 bg-slate-200 rounded-full w-full"></div>
-                                <div class="h-2.5 bg-slate-200 rounded-full w-3/4"></div>
-                                <div class="h-2.5 bg-slate-100 rounded-full w-1/2"></div>
-                            </div>
-                            <div class="flex gap-2">
-                                <div class="h-6 bg-emerald-100 rounded-lg flex-1"></div>
-                                <div class="h-6 bg-[#0f6c53] rounded-lg flex-1"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <p class="text-xs font-bold text-slate-400 mt-6 uppercase tracking-widest">Quality Healthcare • Trusted Pharmacy</p>
-            </div>
-
-            <!-- Right Side Clean Login Form -->
-            <div class="w-full max-w-md mx-auto">
-                <div class="bg-white border border-slate-200/80 rounded-3xl p-8 sm:p-10 shadow-2xl shadow-slate-200/60 text-center">
-                    <div class="w-14 h-14 bg-[#0f6c53] text-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-emerald-900/20">
-                        <i class="fa-solid fa-prescription-bottle-medical text-2xl"></i>
-                    </div>
-                    <h2 class="text-xl font-extrabold text-slate-900 tracking-wide uppercase">Danish Medical Store</h2>
-                    <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-0.5 mb-8">Advanced Pharmacy ERP & POS</p>
-
-                    <div class="text-left mb-6">
-                        <h3 class="text-lg font-bold text-slate-800">Login</h3>
-                        <p class="text-xs text-slate-400 mt-0.5">Enter your username and password to sign in!</p>
-                    </div>
-
-                    <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4 text-left">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1.5">Username:</label>
-                            <input type="text" id="loginUsername" placeholder="Enter username" required
-                                class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#0f6c53] focus:bg-white text-slate-800 placeholder-slate-400 text-sm transition font-medium">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1.5">Password:</label>
-                            <div class="relative">
-                                <input type="password" id="loginPassword" placeholder="Enter password" required
-                                    class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#0f6c53] focus:bg-white text-slate-800 placeholder-slate-400 text-sm transition font-medium">
-                                <i class="fa-solid fa-eye absolute right-4 top-3.5 text-slate-400 text-sm cursor-pointer"></i>
-                            </div>
-                        </div>
-                        <button type="submit" 
-                            class="w-full mt-2 py-3.5 bg-[#0f6c53] hover:bg-[#0b523f] font-extrabold rounded-xl text-white shadow-lg shadow-emerald-900/20 transition duration-200 text-sm uppercase tracking-wider">
-                            LOGIN
-                        </button>
-                        <p id="loginError" class="text-rose-500 text-xs text-center font-bold hidden">Incorrect Username or Password.</p>
-                    </form>
-                </div>
-
-                <!-- Footer Details -->
-                <div class="text-center text-[11px] text-slate-500 font-medium space-y-1 mt-8">
-                    <p class="font-bold text-slate-700">Application Developed by <span class="text-[#0f6c53]">Muhammad Danish</span></p>
-                    <p>Website: <a href="https://facebook.com/danishy51" target="_blank" class="hover:underline text-slate-600">facebook.com/danishy51</a></p>
-                    <p>Email: <a href="mailto:danishy51@gmail.com" class="hover:underline text-slate-600">danishy51@gmail.com</a></p>
-                    <p>For Support: <span class="font-bold text-slate-700">03067488053</span></p>
-                </div>
-            </div>
+        <div class="flex justify-between text-xs text-slate-400">
+          <span>Expired Items:</span>
+          <span class="text-rose-400 font-bold">1</span>
         </div>
-
-        <!-- Bottom Tagline -->
-        <div class="text-center text-xs font-semibold text-slate-400 uppercase tracking-widest pt-4">
-            Accurate Results. Trusted Care.
-        </div>
+      </div>
+      <div class="flex items-center justify-between text-xs">
+        <span class="text-slate-500">Active User:</span>
+        <span class="text-amber-300 font-semibold tracking-wide">DANISH</span>
+      </div>
+      <button class="w-full mt-3 py-1.5 px-3 rounded bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs font-medium flex items-center justify-center space-x-2 transition">
+        <i class="fa-solid fa-lock"></i>
+        <span>Lock System</span>
+      </button>
     </div>
+  </aside>
 
-    <!-- MAIN DASHBOARD -->
-    <div id="app" class="hidden flex h-screen overflow-hidden bg-slate-100">
-        <!-- SIDEBAR -->
-        <aside class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col justify-between text-white shrink-0">
-            <div>
-                <div class="p-6 border-b border-slate-800/80 flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-[#0f6c53] border border-emerald-400/30 flex items-center justify-center text-white">
-                        <i class="fa-solid fa-clinic-medical text-xl"></i>
-                    </div>
-                    <div>
-                        <h1 class="font-bold text-sm leading-tight text-slate-100">Danish Medical</h1>
-                        <span class="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider">Store Portal Pro</span>
-                    </div>
-                </div>
-                <nav class="p-4 space-y-1.5">
-                    <button onclick="switchTab('pos')" id="btn-pos" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm text-white bg-slate-800 border border-slate-700 shadow-sm transition">
-                        <i class="fa-solid fa-cash-register text-emerald-400"></i> Billing & POS
-                    </button>
-                    <button onclick="switchTab('inventory')" id="btn-inventory" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 transition">
-                        <i class="fa-solid fa-boxes-stacked text-teal-400"></i> Stock / Inventory
-                    </button>
-                    <button onclick="switchTab('patients')" id="btn-patients" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 transition">
-                        <i class="fa-solid fa-users text-blue-400"></i> Patient Records
-                    </button>
-                    <button onclick="switchTab('accounts')" id="btn-accounts" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 transition">
-                        <i class="fa-solid fa-chart-line text-emerald-400"></i> Sales & Accounts
-                    </button>
-                    <button onclick="switchTab('settings')" id="btn-settings" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 transition">
-                        <i class="fa-solid fa-database text-purple-400"></i> Settings & Control
-                    </button>
-                </nav>
-            </div>
-            
-            <!-- Quick Alerts Banner in Sidebar -->
-            <div class="px-4 py-3 mx-4 bg-slate-800/60 rounded-xl border border-slate-700/50 mb-2">
-                <div class="text-[11px] font-semibold text-slate-400 mb-1 flex justify-between">
-                    <span>Low Stock Items:</span>
-                    <span id="sidebarLowStock" class="text-amber-400 font-bold">0</span>
-                </div>
-                <div class="text-[11px] font-semibold text-slate-400 flex justify-between">
-                    <span>Expired Items:</span>
-                    <span id="sidebarExpired" class="text-rose-400 font-bold">0</span>
-                </div>
-            </div>
+  <!-- MAIN CONTENT AREA -->
+  <main class="flex-1 overflow-y-auto bg-slate-50 p-6">
 
-            <div class="p-4 border-t border-slate-800/80">
-                <div class="mb-2 text-xs text-slate-400 px-2 flex justify-between">
-                    <span>Active User:</span>
-                    <span id="activeUserLabel" class="text-emerald-400 font-bold uppercase">danish</span>
-                </div>
-                <button onclick="logout()" class="w-full flex items-center gap-3 px-4 py-2.5 text-xs text-rose-400 hover:bg-rose-500/10 rounded-xl transition font-semibold">
-                    <i class="fa-solid fa-right-from-bracket"></i> Lock System
-                </button>
-            </div>
-        </aside>
-
-        <!-- MAIN CONTENT AREA -->
-        <main class="flex-1 overflow-y-auto bg-slate-100 p-6">
-            
-            <!-- VIEW 1: BILLING & INVOICE (POS) -->
-            <section id="view-pos" class="grid grid-cols-12 gap-6 h-full">
-                <!-- Patient Form & Medicine Selection -->
-                <div class="col-span-7 bg-white border border-slate-200/80 shadow-sm rounded-2xl p-6 flex flex-col justify-between overflow-y-auto">
-                    <div>
-                        <h2 class="text-base font-bold text-slate-800 mb-4 flex items-center justify-between">
-                            <span class="flex items-center gap-2"><i class="fa-solid fa-user-plus text-[#0f6c53]"></i> Patient & Sale Details</span>
-                            <span class="text-xs font-semibold px-2.5 py-1 bg-emerald-50 text-[#0f6c53] rounded-lg border border-emerald-200">Express POS Terminal</span>
-                        </h2>
-                        
-                        <!-- Patient Info Fields -->
-                        <div class="grid grid-cols-3 gap-3 mb-6">
-                            <div>
-                                <label class="text-xs font-semibold text-slate-600 mb-1 block">Patient Name</label>
-                                <input type="text" id="custName" oninput="updateReceipt()" placeholder="Patient Full Name" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-[#0f6c53]">
-                            </div>
-                            <div>
-                                <label class="text-xs font-semibold text-slate-600 mb-1 block">Mobile Number</label>
-                                <input type="text" id="custPhone" oninput="updateReceipt()" placeholder="0300-0000000" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-[#0f6c53]">
-                            </div>
-                            <div>
-                                <label class="text-xs font-semibold text-slate-600 mb-1 block">Age</label>
-                                <input type="number" id="custAge" oninput="updateReceipt()" placeholder="e.g. 25" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-[#0f6c53]">
-                            </div>
-                        </div>
-
-                        <!-- Barcode & Quick Add Row -->
-                        <div class="border-t border-slate-200 pt-4 mb-4">
-                            <div class="flex items-center justify-between mb-2">
-                                <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Add Medicine / Scan Barcode</h3>
-                            </div>
-                            
-                            <!-- Barcode Direct Scan Input -->
-                            <div class="mb-3">
-                                <div class="relative">
-                                    <input type="text" id="barcodeInput" onkeydown="handleBarcodeScan(event)" placeholder="Scan Barcode / Enter Batch Number & Press Enter..." class="w-full px-4 py-2 bg-amber-50/50 border border-amber-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-amber-500 font-mono">
-                                    <i class="fa-solid fa-barcode absolute right-4 top-3 text-slate-400"></i>
-                                </div>
-                            </div>
-
-                            <div class="flex gap-2 mb-4">
-                                <select id="posMedSelect" class="flex-1 px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-[#0f6c53]">
-                                    <option value="">Select Item from Inventory...</option>
-                                </select>
-                                <input type="number" id="posMedQty" value="1" min="1" class="w-20 px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-[#0f6c53]" placeholder="Qty">
-                                <button onclick="addItemToCart()" class="px-5 py-2 bg-[#0f6c53] hover:bg-[#0b523f] text-white rounded-xl text-sm font-semibold transition shadow-sm">
-                                    <i class="fa-solid fa-plus"></i> Add
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Items Table -->
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left text-sm text-slate-700">
-                                <thead class="bg-slate-100 text-xs uppercase text-slate-600 font-semibold">
-                                    <tr>
-                                        <th class="p-2.5">Item</th>
-                                        <th class="p-2.5">Price</th>
-                                        <th class="p-2.5">Qty</th>
-                                        <th class="p-2.5">Subtotal</th>
-                                        <th class="p-2.5">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="cartTable" class="divide-y divide-slate-100">
-                                    <!-- Cart Items Dynamic -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- Payment Mode & Complete Sale -->
-                    <div class="border-t border-slate-200 pt-4 mt-6">
-                        <div class="grid grid-cols-2 gap-4 mb-4">
-                            <div>
-                                <label class="text-xs font-semibold text-slate-600 block mb-1">Payment Method</label>
-                                <select id="paymentMethod" onchange="updateReceipt()" class="w-full px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-[#0f6c53]">
-                                    <option value="Cash">Cash Payment</option>
-                                    <option value="JazzCash / EasyPaisa">JazzCash / EasyPaisa</option>
-                                    <option value="Debit / Credit Card">Debit / Credit Card</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="text-xs font-semibold text-slate-600 block mb-1">Discount (%)</label>
-                                <input type="number" id="posDiscount" value="0" min="0" max="100" oninput="updateReceipt()" class="w-full px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-xl text-right text-sm text-slate-800 focus:outline-none focus:border-[#0f6c53]">
-                            </div>
-                        </div>
-                        <button onclick="completeSale()" class="w-full py-3.5 bg-[#0f6c53] hover:bg-[#0b523f] text-white font-bold rounded-xl transition shadow-md shadow-emerald-900/20 flex items-center justify-center gap-2 text-sm">
-                            <i class="fa-solid fa-circle-check"></i> Complete Sale & Save Record
-                        </button>
-                    </div>
-                </div>
-
-                <!-- LIVE 80MM THERMAL RECEIPT PREVIEW -->
-                <div class="col-span-5 bg-white border border-slate-200/80 shadow-sm rounded-2xl p-6 flex flex-col justify-between items-center">
-                    <div class="w-full flex flex-col items-center">
-                        <h2 class="text-base font-bold text-slate-800 mb-4 flex items-center gap-2 w-full text-left">
-                            <i class="fa-solid fa-receipt text-[#0f6c53]"></i> Live Thermal Slip Preview (80mm)
-                        </h2>
-                        
-                        <!-- Printable 80mm Thermal Receipt Slip -->
-                        <div id="printable-receipt" class="thermal-slip font-mono-receipt border-2 border-slate-900 leading-tight receipt-text">
-                            <!-- Top Dynamic QR Code -->
-                            <div class="flex justify-center mb-2">
-                                <div id="receiptQrCode" class="p-1 bg-white border border-slate-300 rounded"></div>
-                            </div>
-                            
-                            <div class="text-center border-b-2 border-dashed border-slate-900 pb-2 mb-2">
-                                <h3 class="font-black text-base uppercase tracking-wider receipt-text">DANISH MEDICAL STORE</h3>
-                                <p class="text-[10px] font-bold receipt-text">Main Pharmacy Road, Retail & Wholesale</p>
-                                <p class="text-[10px] font-bold receipt-text">Ph: +92 300 0000000</p>
-                            </div>
-                            
-                            <div class="mb-2 text-[11px] space-y-0.5 receipt-text">
-                                <p class="receipt-text"><strong class="receipt-text">Patient:</strong> <span id="recName" class="receipt-text">Walk-in Patient</span></p>
-                                <p class="receipt-text"><strong class="receipt-text">Phone:</strong> <span id="recPhone" class="receipt-text">N/A</span></p>
-                                <p class="receipt-text"><strong class="receipt-text">Date:</strong> <span id="recDate" class="receipt-text">--</span></p>
-                                <p class="receipt-text"><strong class="receipt-text">Pay Mode:</strong> <span id="recPayMode" class="receipt-text">Cash</span></p>
-                            </div>
-
-                            <table class="w-full text-left text-[11px] mb-2">
-                                <thead class="border-b-2 border-slate-900">
-                                    <tr>
-                                        <th class="receipt-text font-bold pb-1">Item</th>
-                                        <th class="receipt-text font-bold pb-1">Qty</th>
-                                        <th class="text-right receipt-text font-bold pb-1">Price</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="recItems" class="divide-y divide-slate-300">
-                                    <!-- Items Live -->
-                                </tbody>
-                            </table>
-
-                            <div class="border-t-2 border-dashed border-slate-900 pt-1 text-right text-[11px] space-y-0.5">
-                                <p class="receipt-text">Gross Total: Rs. <span id="recGross" class="receipt-text">0.00</span></p>
-                                <p class="receipt-text">Discount (<span id="recDiscPct" class="receipt-text">0</span>%): -Rs. <span id="recDiscVal" class="receipt-text">0.00</span></p>
-                                <p class="text-sm font-black border-t-2 border-slate-900 pt-1 receipt-text">Net Total: Rs. <span id="recNet" class="receipt-text">0.00</span></p>
-                            </div>
-
-                            <div class="text-center mt-3 border-t border-slate-400 pt-1.5 text-[9px] font-bold receipt-text">
-                                Get well soon! Medicines once sold are non-refundable.
-                            </div>
-                        </div>
-                    </div>
-
-                    <button onclick="window.print()" class="w-full mt-4 py-3 bg-[#0f6c53] hover:bg-[#0b523f] text-white rounded-xl text-sm font-bold transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/20">
-                        <i class="fa-solid fa-print"></i> Print Thermal Receipt (80mm)
-                    </button>
-                </div>
-            </section>
-
-            <!-- VIEW 2: INVENTORY MANAGEMENT -->
-            <section id="view-inventory" class="hidden space-y-6">
-                <div class="flex justify-between items-center">
-                    <div>
-                        <h2 class="text-xl font-bold text-slate-800">Stock & Inventory Control</h2>
-                        <p class="text-xs text-slate-500">Manage medicine batches, suppliers, and stock levels</p>
-                    </div>
-                    <div class="flex gap-2">
-                        <input type="text" id="inventorySearch" oninput="renderInventoryTable()" placeholder="Search stock..." class="px-4 py-2 bg-white border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-[#0f6c53] shadow-sm">
-                        <button onclick="toggleModal('medModal', true)" class="px-4 py-2 bg-[#0f6c53] hover:bg-[#0b523f] text-white rounded-xl text-sm font-semibold flex items-center gap-2 shadow-sm transition">
-                            <i class="fa-solid fa-plus"></i> Add New Medicine
-                        </button>
-                    </div>
-                </div>
-
-                <div class="bg-white border border-slate-200/80 shadow-sm rounded-2xl overflow-hidden">
-                    <table class="w-full text-left text-sm text-slate-700">
-                        <thead class="bg-slate-100 text-xs uppercase text-slate-600 font-semibold">
-                            <tr>
-                                <th class="p-4">Medicine Name</th>
-                                <th class="p-4">Batch / Barcode</th>
-                                <th class="p-4">Supplier</th>
-                                <th class="p-4">Expiry Date</th>
-                                <th class="p-4">Stock Left</th>
-                                <th class="p-4">Unit Price</th>
-                                <th class="p-4 text-center">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="inventoryTable" class="divide-y divide-slate-100">
-                            <!-- Dynamic Stock Data -->
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-
-            <!-- VIEW 3: PATIENT RECORDS -->
-            <section id="view-patients" class="hidden space-y-6">
-                <div class="flex justify-between items-center">
-                    <div>
-                        <h2 class="text-xl font-bold text-slate-800">Patient Database & Sales History</h2>
-                        <p class="text-xs text-slate-500">Search and review patient purchases</p>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <button onclick="exportPatientsToPDF()" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-sm font-semibold flex items-center gap-2 shadow-sm transition">
-                            <i class="fa-solid fa-file-pdf text-rose-400"></i> Export Records PDF
-                        </button>
-                        <input type="text" id="patientSearch" oninput="renderPatients()" placeholder="Search patient name or phone..." class="w-72 px-4 py-2 bg-white border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-[#0f6c53] shadow-sm">
-                    </div>
-                </div>
-
-                <div class="bg-white border border-slate-200/80 shadow-sm rounded-2xl overflow-hidden">
-                    <table class="w-full text-left text-sm text-slate-700">
-                        <thead class="bg-slate-100 text-xs uppercase text-slate-600 font-semibold">
-                            <tr>
-                                <th class="p-4">Date</th>
-                                <th class="p-4">Patient Info</th>
-                                <th class="p-4">Age</th>
-                                <th class="p-4">Purchased Items</th>
-                                <th class="p-4">Payment</th>
-                                <th class="p-4">Total Paid</th>
-                                <th class="p-4 text-center">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="patientsTable" class="divide-y divide-slate-100">
-                            <!-- Dynamic Patients Data -->
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-
-            <!-- VIEW 4: ACCOUNTS & ANALYTICS -->
-            <section id="view-accounts" class="hidden space-y-6">
-                <div class="flex justify-between items-center">
-                    <h2 class="text-xl font-bold text-slate-800">Financial Overview & Analytics</h2>
-                    <button onclick="exportAccountsPDF()" class="px-4 py-2 bg-[#0f6c53] hover:bg-[#0b523f] text-white rounded-xl text-sm font-semibold flex items-center gap-2 shadow-sm transition">
-                        <i class="fa-solid fa-file-invoice text-emerald-300"></i> Download Sales Report
-                    </button>
-                </div>
-                
-                <div class="grid grid-cols-4 gap-6">
-                    <div class="p-6 bg-white border border-slate-200/80 shadow-sm rounded-2xl">
-                        <span class="text-xs text-slate-500 font-bold uppercase tracking-wider">Total Revenue</span>
-                        <h3 class="text-3xl font-extrabold text-[#0f6c53] mt-2">Rs. <span id="accTotalRevenue">0</span></h3>
-                    </div>
-                    <div class="p-6 bg-white border border-slate-200/80 shadow-sm rounded-2xl">
-                        <span class="text-xs text-slate-500 font-bold uppercase tracking-wider">Total Orders</span>
-                        <h3 class="text-3xl font-extrabold text-[#0f6c53] mt-2"><span id="accTotalSales">0</span></h3>
-                    </div>
-                    <div class="p-6 bg-white border border-slate-200/80 shadow-sm rounded-2xl">
-                        <span class="text-xs text-slate-500 font-bold uppercase tracking-wider">Inventory Medicines</span>
-                        <h3 class="text-3xl font-extrabold text-slate-700 mt-2"><span id="accTotalItems">0</span></h3>
-                    </div>
-                    <div class="p-6 bg-white border border-slate-200/80 shadow-sm rounded-2xl">
-                        <span class="text-xs text-slate-500 font-bold uppercase tracking-wider">Stock Valuation</span>
-                        <h3 class="text-3xl font-extrabold text-indigo-600 mt-2">Rs. <span id="accStockValue">0</span></h3>
-                    </div>
-                </div>
-            </section>
-
-            <!-- VIEW 5: BACKUP, USER RIGHTS & LOGIN DEVICES SETTINGS -->
-            <section id="view-settings" class="hidden space-y-6">
-                <div class="flex justify-between items-center border-b border-slate-200 pb-4">
-                    <div>
-                        <h2 class="text-xl font-bold text-slate-800">System Control & Security Settings</h2>
-                        <p class="text-xs text-slate-500">Manage backups, active user access rights, and connected devices</p>
-                    </div>
-                    <div id="adminTopControls" class="flex gap-3">
-                        <button onclick="toggleModal('userRightsModal', true)" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs flex items-center gap-2 shadow-sm transition">
-                            <i class="fa-solid fa-user-shield"></i> User Rights Management
-                        </button>
-                        <button onclick="openDevicesModal()" class="px-4 py-2 bg-[#0f6c53] hover:bg-[#0b523f] text-white font-bold rounded-xl text-xs flex items-center gap-2 shadow-sm transition">
-                            <i class="fa-solid fa-laptop-code"></i> Login Devices Log
-                        </button>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-6">
-                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-                        <h3 class="font-bold text-base text-slate-800 flex items-center gap-2"><i class="fa-solid fa-download text-[#0f6c53]"></i> Backup System Data</h3>
-                        <p class="text-xs text-slate-500">Download a full backup of all inventory items, sales history, users, and device logs.</p>
-                        <button onclick="downloadBackup()" class="px-5 py-2.5 bg-[#0f6c53] hover:bg-[#0b523f] text-white text-xs font-bold rounded-xl transition">
-                            Download Backup File (.json)
-                        </button>
-                    </div>
-
-                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-                        <h3 class="font-bold text-base text-slate-800 flex items-center gap-2"><i class="fa-solid fa-upload text-teal-600"></i> Restore System Data</h3>
-                        <p class="text-xs text-slate-500">Upload a previously saved backup file to restore complete system state.</p>
-                        <input type="file" id="restoreFile" accept=".json" class="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100">
-                        <button onclick="restoreBackup()" class="px-5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-xl transition">
-                            Restore Data Now
-                        </button>
-                    </div>
-                </div>
-            </section>
-
-        </main>
-    </div>
-
-    <!-- ADMIN MODAL: USER RIGHTS MANAGEMENT -->
-    <div id="userRightsModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm hidden">
-        <div class="w-full max-w-2xl p-6 bg-white border border-slate-200 shadow-2xl rounded-2xl max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center mb-4 border-b pb-3">
-                <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
-                    <i class="fa-solid fa-user-lock text-indigo-600"></i> Manage User Accounts & Access Rights
-                </h3>
-                <button onclick="toggleModal('userRightsModal', false)" class="text-slate-400 hover:text-slate-700">
-                    <i class="fa-solid fa-xmark text-lg"></i>
-                </button>
-            </div>
-
-            <form onsubmit="saveUserAccount(event)" class="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-6 space-y-3">
-                <h4 class="text-xs font-extrabold uppercase text-slate-600 tracking-wider">Create New Staff User</h4>
-                <div class="grid grid-cols-2 gap-3">
-                    <input type="text" id="newUsername" placeholder="Username (e.g., ali)" required class="px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-indigo-500">
-                    <input type="password" id="newUserPass" placeholder="Assign Password" required class="px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-indigo-500">
-                </div>
-                <div class="space-y-1">
-                    <label class="text-xs font-semibold text-slate-600 block">Allowed Sections Access:</label>
-                    <div class="flex flex-wrap gap-4 text-xs font-medium text-slate-700 pt-1">
-                        <label class="flex items-center gap-1.5"><input type="checkbox" id="perm_pos" checked class="accent-indigo-600"> Billing / POS</label>
-                        <label class="flex items-center gap-1.5"><input type="checkbox" id="perm_inventory" class="accent-indigo-600"> Stock & Inventory</label>
-                        <label class="flex items-center gap-1.5"><input type="checkbox" id="perm_patients" class="accent-indigo-600"> Patient Records</label>
-                        <label class="flex items-center gap-1.5"><input type="checkbox" id="perm_accounts" class="accent-indigo-600"> Sales & Accounts</label>
-                        <label class="flex items-center gap-1.5"><input type="checkbox" id="perm_settings" class="accent-indigo-600"> Backup & Restore</label>
-                    </div>
-                </div>
-                <button type="submit" class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-sm">
-                    + Add New User
-                </button>
-            </form>
-
-            <h4 class="text-xs font-extrabold uppercase text-slate-600 tracking-wider mb-2">Existing System Users</h4>
-            <div class="overflow-x-auto border border-slate-200 rounded-xl">
-                <table class="w-full text-left text-xs">
-                    <thead class="bg-slate-100 font-bold text-slate-600 border-b">
-                        <tr>
-                            <th class="p-3">Username</th>
-                            <th class="p-3">Password</th>
-                            <th class="p-3">Access Allowed</th>
-                            <th class="p-3 text-center">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="usersListTable" class="divide-y divide-slate-100">
-                        <!-- Dynamic User Rows -->
-                    </tbody>
-                </table>
-            </div>
+    <!-- POS VIEW -->
+    <div id="view-pos" class="grid grid-cols-12 gap-6">
+      <div class="col-span-7 bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+        <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+          <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+            <i class="fa-solid fa-user-plus text-emerald-600"></i> Patient & Sale Details
+          </h2>
+          <span class="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">Express POS Terminal</span>
         </div>
-    </div>
 
-    <!-- ADMIN MODAL: LOGIN DEVICES LOG -->
-    <div id="loginDevicesModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm hidden">
-        <div class="w-full max-w-4xl p-6 bg-white border border-slate-200 shadow-2xl rounded-2xl max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center mb-4 border-b pb-3">
-                <div>
-                    <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
-                        <i class="fa-solid fa-laptop-medical text-[#0f6c53]"></i> Connected Devices & Login Activity History
-                    </h3>
-                    <p class="text-xs text-slate-500">Track computers, IP details, and locations logging into Danish Medical Store</p>
-                </div>
-                <button onclick="toggleModal('loginDevicesModal', false)" class="text-slate-400 hover:text-slate-700">
-                    <i class="fa-solid fa-xmark text-lg"></i>
-                </button>
-            </div>
-
-            <div class="overflow-x-auto border border-slate-200 rounded-xl">
-                <table class="w-full text-left text-xs text-slate-700">
-                    <thead class="bg-slate-100 font-bold text-slate-700 border-b">
-                        <tr>
-                            <th class="p-3">Time & Date</th>
-                            <th class="p-3">User</th>
-                            <th class="p-3">System / Device OS</th>
-                            <th class="p-3">Browser</th>
-                            <th class="p-3">IP Address</th>
-                            <th class="p-3">Location / Region</th>
-                        </tr>
-                    </thead>
-                    <tbody id="devicesListTable" class="divide-y divide-slate-100">
-                        <!-- Dynamic Device Logs -->
-                    </tbody>
-                </table>
-            </div>
-            
-            <div class="mt-4 text-right">
-                <button onclick="clearDeviceLogs()" class="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl text-xs font-bold transition">
-                    Clear Log History
-                </button>
-            </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 mb-1">Patient Name</label>
+            <input type="text" id="patientName" value="Muhammad Danish" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-amber-500 outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 mb-1">Mobile Number</label>
+            <input type="text" id="patientPhone" value="03067488053" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-amber-500 outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 mb-1">Age</label>
+            <input type="number" id="patientAge" value="32" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-amber-500 outline-none">
+          </div>
         </div>
-    </div>
 
-    <!-- ADD MEDICINE MODAL -->
-    <div id="medModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-sm hidden">
-        <div class="w-full max-w-lg p-6 bg-white border border-slate-200 shadow-2xl rounded-2xl">
-            <h3 class="text-lg font-bold text-slate-800 mb-4">Add New Medicine / Item</h3>
-            <form onsubmit="saveMedicine(event)" class="space-y-4">
-                <input type="text" id="mName" placeholder="Medicine Name (e.g., Panadol 500mg)" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-[#0f6c53]">
-                <div class="grid grid-cols-2 gap-3">
-                    <input type="text" id="mBatch" placeholder="Batch / Barcode No." required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-[#0f6c53]">
-                    <input type="text" id="mSupplier" placeholder="Supplier / Company Name" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-[#0f6c53]">
-                </div>
-                <div class="grid grid-cols-3 gap-3">
-                    <input type="date" id="mExpiry" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-[#0f6c53]">
-                    <input type="number" id="mStock" placeholder="Stock Qty" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-[#0f6c53]">
-                    <input type="number" step="0.01" id="mPrice" placeholder="Unit Price (PKR)" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-[#0f6c53]">
-                </div>
-                <div class="flex justify-end gap-3 pt-2">
-                    <button type="button" onclick="toggleModal('medModal', false)" class="px-4 py-2 bg-slate-100 text-slate-600 rounded-xl text-sm font-semibold hover:bg-slate-200">Cancel</button>
-                    <button type="submit" class="px-4 py-2 bg-[#0f6c53] hover:bg-[#0b523f] text-white rounded-xl text-sm font-semibold">Save Medicine</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- VIEW HISTORICAL RECEIPT SLIP MODAL -->
-    <div id="receiptModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-sm hidden">
-        <div class="w-full max-w-sm p-6 bg-white border border-slate-200 shadow-2xl rounded-2xl relative flex flex-col items-center">
-            <button onclick="toggleModal('receiptModal', false)" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700">
-                <i class="fa-solid fa-xmark text-lg"></i>
+        <!-- Add Items Section -->
+        <div class="pt-2">
+          <label class="block text-xs font-semibold text-slate-500 mb-1">ADD MEDICINE / SCAN BARCODE</label>
+          <div class="flex gap-2 mb-3">
+            <input type="text" placeholder="Scan Barcode / Enter Item..." class="flex-1 text-sm bg-amber-50/50 border border-amber-200 rounded-lg p-2.5 outline-none">
+          </div>
+          <div class="flex gap-2">
+            <select class="flex-1 text-sm bg-slate-50 border border-slate-200 rounded-lg p-2 outline-none">
+              <option>Panadol 500mg (Rs. 30) - Stock: 108</option>
+              <option>Augmentin 625mg (Rs. 250) - Stock: 45</option>
+            </select>
+            <input type="number" value="5" id="itemQty" class="w-20 text-sm bg-slate-50 border border-slate-200 rounded-lg p-2 text-center outline-none">
+            <button onclick="addItem()" class="bg-emerald-700 hover:bg-emerald-800 text-white font-medium px-4 rounded-lg text-sm flex items-center gap-1 transition">
+              <i class="fa-solid fa-plus"></i> Add
             </button>
-            <div id="modal-printable-receipt" class="thermal-slip font-mono-receipt border-2 border-slate-900 leading-tight receipt-text">
-                <div class="flex justify-center mb-2">
-                    <div id="modalReceiptQrCode" class="p-1 bg-white border border-slate-300 rounded"></div>
-                </div>
-                <div class="text-center border-b-2 border-dashed border-slate-900 pb-2 mb-2">
-                    <h3 class="font-black text-base uppercase tracking-wider receipt-text">DANISH MEDICAL STORE</h3>
-                    <p class="text-[10px] font-bold receipt-text">Main Pharmacy Road, Retail & Wholesale</p>
-                    <p class="text-[10px] font-bold receipt-text">Ph: +92 300 0000000</p>
-                </div>
-                
-                <div class="mb-2 text-[11px] space-y-0.5 receipt-text">
-                    <p class="receipt-text"><strong class="receipt-text">Patient:</strong> <span id="mRecName" class="receipt-text">--</span></p>
-                    <p class="receipt-text"><strong class="receipt-text">Phone:</strong> <span id="mRecPhone" class="receipt-text">--</span></p>
-                    <p class="receipt-text"><strong class="receipt-text">Age:</strong> <span id="mRecAge" class="receipt-text">--</span></p>
-                    <p class="receipt-text"><strong class="receipt-text">Date:</strong> <span id="mRecDate" class="receipt-text">--</span></p>
-                    <p class="receipt-text"><strong class="receipt-text">Payment:</strong> <span id="mRecPay" class="receipt-text">Cash</span></p>
-                </div>
-
-                <div class="border-t-2 border-b-2 border-slate-900 py-2 mb-2 receipt-text">
-                    <p class="font-bold text-[10px] mb-1 receipt-text">Purchased Items:</p>
-                    <p id="mRecItems" class="text-xs receipt-text"></p>
-                </div>
-
-                <div class="text-right space-y-1 receipt-text">
-                    <p class="text-sm font-black border-t-2 border-slate-900 pt-1 receipt-text">Total Paid: Rs. <span id="mRecTotal" class="receipt-text">0.00</span></p>
-                </div>
-
-                <div class="text-center mt-3 border-t border-slate-400 pt-1.5 text-[9px] font-bold receipt-text">
-                    Get well soon! Medicines once sold are non-refundable.
-                </div>
-            </div>
-            <div class="mt-4 flex gap-2 w-full">
-                <button onclick="window.print()" class="flex-1 py-2.5 bg-[#0f6c53] hover:bg-[#0b523f] text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-print"></i> Print Slip (80mm)
-                </button>
-                <button onclick="toggleModal('receiptModal', false)" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold">Close</button>
-            </div>
+          </div>
         </div>
+
+        <!-- Selected Items Table -->
+        <table class="w-full text-left text-xs mt-4">
+          <thead class="bg-slate-100 text-slate-500 uppercase tracking-wider">
+            <tr>
+              <th class="p-2">Item</th>
+              <th class="p-2">Price</th>
+              <th class="p-2">Qty</th>
+              <th class="p-2">Subtotal</th>
+              <th class="p-2 text-center">Action</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 font-medium">
+            <tr>
+              <td class="p-2 font-semibold">Panadol 500mg</td>
+              <td class="p-2">Rs. 30</td>
+              <td class="p-2">5</td>
+              <td class="p-2 font-semibold">Rs. 150.00</td>
+              <td class="p-2 text-center text-rose-500 cursor-pointer"><i class="fa-solid fa-xmark"></i></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Payments -->
+        <div class="grid grid-cols-2 gap-3 pt-4 border-t border-slate-100">
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 mb-1">Payment Method</label>
+            <select class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg p-2 outline-none">
+              <option>Cash Payment</option>
+              <option>Card / Online</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 mb-1">Discount (%)</label>
+            <input type="number" value="0" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg p-2 outline-none text-right">
+          </div>
+        </div>
+
+        <button onclick="triggerPrint()" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-700/20 transition">
+          <i class="fa-solid fa-check-circle"></i> Complete Sale & Save Record
+        </button>
+      </div>
+
+      <!-- LIVE RECEIPT PREVIEW -->
+      <div class="col-span-5 bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+        <div>
+          <h3 class="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-receipt text-amber-500"></i> Live Thermal Slip Preview (<span id="previewWidthLabel">80mm</span>)
+          </h3>
+          
+          <!-- Wrapper for thermal receipt -->
+          <div class="bg-slate-100 p-4 rounded-xl border border-dashed border-slate-300 flex justify-center overflow-x-auto">
+            <div id="printArea" class="receipt-container bg-white p-4 border border-slate-300 shadow-sm font-mono text-xs text-black">
+              <div class="text-center">
+                <div id="qrcode" class="flex justify-center mb-2"></div>
+                <h2 class="font-extrabold text-sm uppercase tracking-wide">Danish Medical Store</h2>
+                <p class="text-[10px]">Main Pharmacy Road, Retail & Wholesale</p>
+                <p class="text-[10px]">Ph: +92 300 0000000</p>
+              </div>
+              
+              <div class="border-b border-black border-dashed my-2"></div>
+              
+              <div class="text-[10px] space-y-0.5">
+                <p><strong>Patient:</strong> <span id="slipName">Muhammad Danish</span></p>
+                <p><strong>Phone:</strong> <span id="slipPhone">03067488053</span></p>
+                <p><strong>Age:</strong> <span id="slipAge">32</span></p>
+                <p><strong>Date:</strong> 2026-08-24</p>
+                <p><strong>Pay Mode:</strong> Cash</p>
+              </div>
+
+              <div class="border-b border-black border-dashed my-2"></div>
+
+              <table class="w-full text-left text-[10px]">
+                <thead>
+                  <tr class="border-b border-black">
+                    <th class="pb-1">Item</th>
+                    <th class="pb-1 text-center">Qty</th>
+                    <th class="pb-1 text-right">Price</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200">
+                  <tr>
+                    <td class="py-1">Panadol 500mg</td>
+                    <td class="py-1 text-center">5</td>
+                    <td class="py-1 text-right">150.00</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div class="border-b border-black border-dashed my-2"></div>
+
+              <div class="text-right text-[11px] font-bold">
+                <p>Net Total: Rs. 150.00</p>
+              </div>
+
+              <div class="border-b border-black border-dashed my-2"></div>
+
+              <p class="text-[9px] text-center italic">Get well soon! Medicines once sold are non-refundable.</p>
+            </div>
+          </div>
+        </div>
+
+        <button onclick="triggerPrint()" class="w-full mt-4 bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow-md transition">
+          <i class="fa-solid fa-print"></i> Print Thermal Receipt (<span id="printBtnWidthLabel">80mm</span>)
+        </button>
+      </div>
     </div>
 
-    <!-- APP SCRIPT LOGIC -->
-    <script>
-        // DATA STORES
-        let inventory = JSON.parse(localStorage.getItem('danish_inventory')) || [
-            { id: 1, name: "Panadol 500mg", batch: "B-992", supplier: "GSK Pakistan", expiry: "2026-12-01", stock: 120, price: 30 },
-            { id: 2, name: "Augmentin 625mg", batch: "B-441", supplier: "GSK Pakistan", expiry: "2025-08-15", stock: 5, price: 280 }
-        ];
-        let salesHistory = JSON.parse(localStorage.getItem('danish_sales')) || [];
-        let cart = [];
+    <!-- SETTINGS VIEW WITH SLIP SIZE CONTROL -->
+    <div id="view-settings" class="hidden max-w-4xl mx-auto bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
+      <div class="border-b border-slate-100 pb-4 flex items-center justify-between">
+        <div>
+          <h2 class="text-xl font-bold text-slate-800">System Settings & Controls</h2>
+          <p class="text-xs text-slate-500">Configure thermal slip page sizes & hardware settings</p>
+        </div>
+        <i class="fa-solid fa-sliders text-amber-500 text-2xl"></i>
+      </div>
 
-        let systemUsers = JSON.parse(localStorage.getItem('danish_users')) || [
-            { username: 'danish', pass: '7869', rights: ['pos', 'inventory', 'patients', 'accounts', 'settings'], isAdmin: true }
-        ];
+      <!-- THERMAL SLIP SIZE SETTING CARD -->
+      <div class="bg-amber-50/40 rounded-xl p-5 border border-amber-200/60 space-y-4">
+        <div class="flex items-center space-x-3">
+          <div class="p-2.5 bg-gold-gradient rounded-lg text-slate-950 font-bold">
+            <i class="fa-solid fa-print text-lg"></i>
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-slate-800">Thermal Printer Receipt Format (Paper Width)</h3>
+            <p class="text-xs text-slate-500">Change printer slip format dimensions (58mm POS, 80mm Standard, Custom MM)</p>
+          </div>
+        </div>
 
-        let deviceLogs = JSON.parse(localStorage.getItem('danish_device_logs')) || [];
-        let currentUser = null;
-        let qrCodeInstance = null;
-        let modalQrCodeInstance = null;
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Select Slip Preset Format</label>
+            <select id="receiptPreset" onchange="changeReceiptSize(this.value)" class="w-full text-sm bg-white border border-amber-300 rounded-lg p-2.5 focus:ring-2 focus:ring-amber-500 outline-none font-medium">
+              <option value="80mm" selected>80mm Standard Thermal (Default)</option>
+              <option value="58mm">58mm Small POS Thermal</option>
+              <option value="100mm">100mm Large Label / Slip</option>
+              <option value="custom">Custom Width (mm)</option>
+            </select>
+          </div>
 
-        // CHECK URL FOR DIRECT PUBLIC RECEIPT SCAN
-        window.addEventListener('DOMContentLoaded', () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            if(urlParams.has('receipt_public')) {
-                // Direct Standalone Thermal View for QR Scans
-                document.getElementById('loginModal').classList.add('hidden');
-                document.getElementById('app').classList.add('hidden');
-                document.getElementById('public-receipt-view').classList.remove('hidden');
+          <div id="customWidthGroup" class="hidden">
+            <label class="block text-xs font-bold text-slate-700 mb-1">Enter Custom Width (mm)</label>
+            <div class="flex items-center space-x-2">
+              <input type="number" id="customMmInput" placeholder="e.g. 72" class="w-full text-sm bg-white border border-amber-300 rounded-lg p-2.5 outline-none">
+              <button onclick="applyCustomWidth()" class="bg-slate-900 text-amber-400 font-bold px-4 py-2.5 rounded-lg text-xs hover:bg-slate-800 transition">Apply</button>
+            </div>
+          </div>
 
-                const pName = urlParams.get('name') || 'Walk-in Patient';
-                const pPhone = urlParams.get('phone') || 'N/A';
-                const pDate = urlParams.get('date') || new Date().toLocaleDateString();
-                const pPay = urlParams.get('pay') || 'Cash';
-                const pNet = urlParams.get('net') || '0.00';
-                const pItems = urlParams.get('items') || 'Medicines';
+          <div class="flex items-end">
+            <div class="bg-white p-2.5 border border-amber-200 rounded-lg text-xs text-slate-600 w-full">
+              <span class="font-bold">Active Format:</span> <span id="activeWidthTag" class="text-emerald-700 font-bold">80mm</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-                document.getElementById('public-thermal-view').innerHTML = `
-                    <div class="text-center border-b-2 border-dashed border-slate-900 pb-2 mb-2">
-                        <h3 class="font-black text-base uppercase tracking-wider receipt-text">DANISH MEDICAL STORE</h3>
-                        <p class="text-[10px] font-bold receipt-text">Main Pharmacy Road, Retail & Wholesale</p>
-                        <p class="text-[10px] font-bold receipt-text">Ph: +92 300 0000000</p>
-                    </div>
-                    
-                    <div class="mb-2 text-[11px] space-y-0.5 receipt-text">
-                        <p class="receipt-text"><strong class="receipt-text">Patient:</strong> <span class="receipt-text">${pName}</span></p>
-                        <p class="receipt-text"><strong class="receipt-text">Phone:</strong> <span class="receipt-text">${pPhone}</span></p>
-                        <p class="receipt-text"><strong class="receipt-text">Date:</strong> <span class="receipt-text">${pDate}</span></p>
-                        <p class="receipt-text"><strong class="receipt-text">Payment:</strong> <span class="receipt-text">${pPay}</span></p>
-                    </div>
+  </main>
 
-                    <div class="border-t-2 border-b-2 border-slate-900 py-2 mb-2 receipt-text">
-                        <p class="font-bold text-[10px] mb-1 receipt-text">Purchased Items:</p>
-                        <p class="text-xs receipt-text">${pItems}</p>
-                    </div>
-
-                    <div class="text-right space-y-1 receipt-text">
-                        <p class="text-sm font-black border-t-2 border-slate-900 pt-1 receipt-text">Net Total: Rs. ${pNet}</p>
-                    </div>
-
-                    <div class="text-center mt-3 border-t border-slate-400 pt-1.5 text-[9px] font-bold receipt-text">
-                        Get well soon! Medicines once sold are non-refundable.
-                    </div>
-                `;
-                return;
-            }
-
-            const savedUser = localStorage.getItem('danish_active_user');
-            if(savedUser) {
-                const found = systemUsers.find(u => u.username === savedUser);
-                if(found) {
-                    currentUser = found;
-                    document.getElementById('loginModal').classList.add('hidden');
-                    document.getElementById('app').classList.remove('hidden');
-                    init();
-                }
-            }
-        });
-
-        // LOGIN SYSTEM & DEVICE LOGGING
-        async function handleLogin(e) {
-            e.preventDefault();
-            const userVal = document.getElementById('loginUsername').value.trim().toLowerCase();
-            const passVal = document.getElementById('loginPassword').value.trim();
-            
-            const matchedUser = systemUsers.find(u => u.username.toLowerCase() === userVal && u.pass === passVal);
-
-            if(matchedUser) {
-                currentUser = matchedUser;
-                localStorage.setItem('danish_active_user', matchedUser.username);
-                await recordDeviceLog(matchedUser.username);
-
-                document.getElementById('loginModal').classList.add('hidden');
-                document.getElementById('app').classList.remove('hidden');
-                init();
-            } else {
-                document.getElementById('loginError').classList.remove('hidden');
-            }
+  <script>
+    // Tab Switcher
+    function switchTab(tabName) {
+      ['pos', 'inventory', 'patients', 'sales', 'settings'].forEach(tab => {
+        const view = document.getElementById(`view-${tab}`);
+        const nav = document.getElementById(`nav-${tab}`);
+        if (view) view.classList.add('hidden');
+        if (nav) {
+          nav.classList.remove('gold-active-tab');
+          nav.classList.add('text-slate-400');
         }
-
-        async function recordDeviceLog(username) {
-            const userAgent = navigator.userAgent;
-            let os = "Unknown OS";
-            if (userAgent.indexOf("Win") !== -1) os = "Windows PC";
-            if (userAgent.indexOf("Mac") !== -1) os = "macOS";
-            if (userAgent.indexOf("Linux") !== -1) os = "Linux PC";
-            if (userAgent.indexOf("Android") !== -1) os = "Android Mobile";
-            if (userAgent.indexOf("like Mac") !== -1) os = "iPhone / iOS";
-
-            let browser = "Web Browser";
-            if (userAgent.indexOf("Chrome") !== -1) browser = "Google Chrome";
-            else if (userAgent.indexOf("Firefox") !== -1) browser = "Mozilla Firefox";
-            else if (userAgent.indexOf("Safari") !== -1) browser = "Safari";
-            else if (userAgent.indexOf("Edg") !== -1) browser = "Microsoft Edge";
-
-            let ip = "192.168.1.10";
-            let location = "Ahmad Puri, Pakistan";
-
-            try {
-                const res = await fetch('https://ipapi.co/json/');
-                if(res.ok) {
-                    const data = await res.json();
-                    ip = data.ip || ip;
-                    location = `${data.city || 'Ahmad Puri'}, ${data.country_name || 'Pakistan'}`;
-                }
-            } catch(e) {}
-
-            const newLog = {
-                id: Date.now(),
-                time: new Date().toLocaleString(),
-                user: username,
-                os: `${os} (${screen.width}x${screen.height})`,
-                browser: browser,
-                ip: ip,
-                location: location
-            };
-
-            deviceLogs.unshift(newLog);
-            if(deviceLogs.length > 50) deviceLogs.pop();
-            localStorage.setItem('danish_device_logs', JSON.stringify(deviceLogs));
-        }
-
-        function logout() {
-            localStorage.removeItem('danish_active_user');
-            currentUser = null;
-            document.getElementById('loginModal').classList.remove('hidden');
-            document.getElementById('app').classList.add('hidden');
-            document.getElementById('loginUsername').value = '';
-            document.getElementById('loginPassword').value = '';
-            document.getElementById('loginError').classList.add('hidden');
-        }
-
-        function applyUserRightsUI() {
-            if(!currentUser) return;
-
-            document.getElementById('activeUserLabel').innerText = currentUser.username;
-
-            const allTabs = ['pos', 'inventory', 'patients', 'accounts', 'settings'];
-            
-            allTabs.forEach(tab => {
-                const btn = document.getElementById(`btn-${tab}`);
-                if(btn) {
-                    if(currentUser.rights.includes(tab) || currentUser.isAdmin) {
-                        btn.classList.remove('hidden');
-                    } else {
-                        btn.classList.add('hidden');
-                    }
-                }
-            });
-
-            const adminTopControls = document.getElementById('adminTopControls');
-            if(adminTopControls) {
-                if(currentUser.username.toLowerCase() === 'danish' || currentUser.isAdmin) {
-                    adminTopControls.classList.remove('hidden');
-                } else {
-                    adminTopControls.classList.add('hidden');
-                }
-            }
-
-            const firstTab = allTabs.find(t => currentUser.rights.includes(t)) || 'pos';
-            switchTab(firstTab);
-        }
-
-        function switchTab(tab) {
-            if(currentUser && !currentUser.rights.includes(tab) && !currentUser.isAdmin) {
-                alert('Access Denied! You do not have permissions for this section.');
-                return;
-            }
-
-            ['pos', 'inventory', 'patients', 'accounts', 'settings'].forEach(t => {
-                const el = document.getElementById(`view-${t}`);
-                if (el) el.classList.add('hidden');
-                const btn = document.getElementById(`btn-${t}`);
-                if (btn) btn.className = "nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 transition";
-            });
-            const activeView = document.getElementById(`view-${tab}`);
-            if (activeView) activeView.classList.remove('hidden');
-            
-            const activeBtn = document.getElementById(`btn-${tab}`);
-            if (activeBtn) activeBtn.className = "nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm text-white bg-slate-800 border border-slate-700 shadow-sm transition";
-        }
-
-        function toggleModal(id, show) {
-            document.getElementById(id).classList.toggle('hidden', !show);
-            if(id === 'userRightsModal' && show) renderUsersList();
-        }
-
-        function init() {
-            applyUserRightsUI();
-            renderInventoryDropdown();
-            renderInventoryTable();
-            renderPatients();
-            renderAccounts();
-            updateReceipt();
-            updateSidebarAlerts();
-        }
-
-        function saveUserAccount(e) {
-            e.preventDefault();
-            const uName = document.getElementById('newUsername').value.trim();
-            const uPass = document.getElementById('newUserPass').value.trim();
-
-            if(!uName || !uPass) return;
-            if(systemUsers.some(u => u.username.toLowerCase() === uName.toLowerCase())) {
-                alert('User with this username already exists!');
-                return;
-            }
-
-            const rights = [];
-            if(document.getElementById('perm_pos').checked) rights.push('pos');
-            if(document.getElementById('perm_inventory').checked) rights.push('inventory');
-            if(document.getElementById('perm_patients').checked) rights.push('patients');
-            if(document.getElementById('perm_accounts').checked) rights.push('accounts');
-            if(document.getElementById('perm_settings').checked) rights.push('settings');
-
-            systemUsers.push({
-                username: uName,
-                pass: uPass,
-                rights: rights,
-                isAdmin: false
-            });
-
-            localStorage.setItem('danish_users', JSON.stringify(systemUsers));
-            alert(`User '${uName}' created successfully with assigned rights!`);
-            e.target.reset();
-            renderUsersList();
-        }
-
-        function deleteUser(username) {
-            if(username.toLowerCase() === 'danish') {
-                alert('Main Admin account cannot be deleted!');
-                return;
-            }
-            if(confirm(`Are you sure you want to remove user '${username}'?`)) {
-                systemUsers = systemUsers.filter(u => u.username !== username);
-                localStorage.setItem('danish_users', JSON.stringify(systemUsers));
-                renderUsersList();
-            }
-        }
-
-        function renderUsersList() {
-            const tbody = document.getElementById('usersListTable');
-            tbody.innerHTML = systemUsers.map(u => `
-                <tr class="hover:bg-slate-50">
-                    <td class="p-3 font-bold text-slate-800">${u.username} ${u.isAdmin ? '<span class="text-[10px] bg-emerald-100 text-[#0f6c53] px-1.5 py-0.5 rounded font-extrabold ml-1">ADMIN</span>' : ''}</td>
-                    <td class="p-3 font-mono text-slate-600">${u.pass}</td>
-                    <td class="p-3 flex flex-wrap gap-1">
-                        ${u.rights.map(r => `<span class="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded text-[10px] font-semibold border border-indigo-200 uppercase">${r}</span>`).join('')}
-                    </td>
-                    <td class="p-3 text-center">
-                        ${!u.isAdmin ? `<button onclick="deleteUser('${u.username}')" class="text-rose-600 hover:underline font-bold text-xs"><i class="fa-solid fa-user-minus"></i> Delete</button>` : '<span class="text-slate-400 font-bold">-</span>'}
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        function openDevicesModal() {
-            renderDevicesList();
-            toggleModal('loginDevicesModal', true);
-        }
-
-        function renderDevicesList() {
-            const tbody = document.getElementById('devicesListTable');
-            if(deviceLogs.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400">No login device records found.</td></tr>`;
-                return;
-            }
-            tbody.innerHTML = deviceLogs.map(log => `
-                <tr class="hover:bg-slate-50 font-medium">
-                    <td class="p-3 text-slate-500 font-mono text-[11px]">${log.time}</td>
-                    <td class="p-3 font-bold text-slate-800">${log.user}</td>
-                    <td class="p-3 text-slate-700"><i class="fa-solid fa-laptop text-slate-400 mr-1"></i> ${log.os}</td>
-                    <td class="p-3 text-[#0f6c53] font-semibold">${log.browser}</td>
-                    <td class="p-3 font-mono text-amber-600">${log.ip}</td>
-                    <td class="p-3 text-slate-600"><i class="fa-solid fa-location-dot text-rose-500 mr-1"></i> ${log.location}</td>
-                </tr>
-            `).join('');
-        }
-
-        function clearDeviceLogs() {
-            if(confirm('Are you sure you want to clear all login device history logs?')) {
-                deviceLogs = [];
-                localStorage.setItem('danish_device_logs', JSON.stringify(deviceLogs));
-                renderDevicesList();
-            }
-        }
-
-        function updateSidebarAlerts() {
-            const today = new Date();
-            const lowStock = inventory.filter(i => i.stock < 10).length;
-            const expired = inventory.filter(i => new Date(i.expiry) <= today).length;
-
-            document.getElementById('sidebarLowStock').innerText = lowStock;
-            document.getElementById('sidebarExpired').innerText = expired;
-        }
-
-        function saveMedicine(e) {
-            e.preventDefault();
-            const newItem = {
-                id: Date.now(),
-                name: document.getElementById('mName').value,
-                batch: document.getElementById('mBatch').value,
-                supplier: document.getElementById('mSupplier').value || 'General Vendor',
-                expiry: document.getElementById('mExpiry').value,
-                stock: parseInt(document.getElementById('mStock').value),
-                price: parseFloat(document.getElementById('mPrice').value)
-            };
-            inventory.push(newItem);
-            localStorage.setItem('danish_inventory', JSON.stringify(inventory));
-            toggleModal('medModal', false);
-            init();
-            e.target.reset();
-        }
-
-        function deleteItem(id) {
-            if(confirm('Are you sure you want to delete this medicine?')) {
-                inventory = inventory.filter(i => i.id !== id);
-                localStorage.setItem('danish_inventory', JSON.stringify(inventory));
-                init();
-            }
-        }
-
-        function renderInventoryTable() {
-            const q = (document.getElementById('inventorySearch')?.value || '').toLowerCase();
-            const tbody = document.getElementById('inventoryTable');
-            const filtered = inventory.filter(i => i.name.toLowerCase().includes(q) || i.batch.toLowerCase().includes(q));
-
-            tbody.innerHTML = filtered.map(item => `
-                <tr class="hover:bg-slate-50/80">
-                    <td class="p-4 font-semibold text-slate-800">${item.name}</td>
-                    <td class="p-4 text-xs font-mono text-slate-500">${item.batch}</td>
-                    <td class="p-4 text-xs font-medium text-slate-600">${item.supplier || 'N/A'}</td>
-                    <td class="p-4 text-xs ${new Date(item.expiry) < new Date() ? 'text-rose-600 font-bold' : ''}">${item.expiry}</td>
-                    <td class="p-4"><span class="px-2.5 py-1 rounded-full text-xs font-bold ${item.stock < 10 ? 'bg-rose-100 text-rose-700 border border-rose-200' : 'bg-emerald-100 text-emerald-800 border border-emerald-200'}">${item.stock}</span></td>
-                    <td class="p-4 font-semibold">Rs. ${item.price.toFixed(2)}</td>
-                    <td class="p-4 text-center">
-                        <button onclick="deleteItem(${item.id})" class="text-xs text-rose-500 hover:underline font-semibold"><i class="fa-solid fa-trash"></i> Delete</button>
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        function renderInventoryDropdown() {
-            const select = document.getElementById('posMedSelect');
-            select.innerHTML = '<option value="">Select Item from Inventory...</option>' + 
-                inventory.map(item => `<option value="${item.id}">${item.name} (Rs. ${item.price}) - Stock: ${item.stock}</option>`).join('');
-        }
-
-        function handleBarcodeScan(e) {
-            if(e.key === 'Enter') {
-                e.preventDefault();
-                const code = e.target.value.trim().toLowerCase();
-                if(!code) return;
-
-                const med = inventory.find(i => i.batch.toLowerCase() === code || i.name.toLowerCase().includes(code));
-                if(med) {
-                    if(med.stock < 1) {
-                        alert('Item Out of Stock!');
-                        return;
-                    }
-                    const existing = cart.find(c => c.id === med.id);
-                    if(existing) {
-                        existing.qty += 1;
-                    } else {
-                        cart.push({ ...med, qty: 1 });
-                    }
-                    renderCart();
-                    e.target.value = '';
-                } else {
-                    alert('Medicine not found for this code/name.');
-                }
-            }
-        }
-
-        function addItemToCart() {
-            const id = parseInt(document.getElementById('posMedSelect').value);
-            const qty = parseInt(document.getElementById('posMedQty').value);
-            if(!id || qty <= 0) return;
-
-            const med = inventory.find(i => i.id === id);
-            if(med.stock < qty) {
-                alert('Not enough stock available!');
-                return;
-            }
-
-            const existing = cart.find(c => c.id === id);
-            if(existing) {
-                existing.qty += qty;
-            } else {
-                cart.push({ ...med, qty });
-            }
-            renderCart();
-        }
-
-        function removeFromCart(id) {
-            cart = cart.filter(c => c.id !== id);
-            renderCart();
-        }
-
-        function renderCart() {
-            const tbody = document.getElementById('cartTable');
-            tbody.innerHTML = cart.map(item => `
-                <tr>
-                    <td class="p-2 font-semibold text-slate-800">${item.name}</td>
-                    <td class="p-2">Rs. ${item.price}</td>
-                    <td class="p-2">${item.qty}</td>
-                    <td class="p-2 font-bold text-slate-900">Rs. ${(item.price * item.qty).toFixed(2)}</td>
-                    <td class="p-2"><button onclick="removeFromCart(${item.id})" class="text-rose-500 hover:text-rose-700"><i class="fa-solid fa-xmark"></i></button></td>
-                </tr>
-            `).join('');
-            updateReceipt();
-        }
-
-        // UPDATE 80MM THERMAL RECEIPT PREVIEW & DYNAMIC QR CODE
-        function updateReceipt() {
-            const name = document.getElementById('custName').value || 'Walk-in Patient';
-            const phone = document.getElementById('custPhone').value || 'N/A';
-            const payMode = document.getElementById('paymentMethod')?.value || 'Cash';
-            const discPct = parseFloat(document.getElementById('posDiscount').value) || 0;
-            const dateStr = new Date().toLocaleDateString();
-
-            document.getElementById('recName').innerText = name;
-            document.getElementById('recPhone').innerText = phone;
-            document.getElementById('recPayMode').innerText = payMode;
-            document.getElementById('recDate').innerText = dateStr;
-
-            let gross = 0;
-            const itemsSummary = cart.map(i => `${i.name} (x${i.qty})`).join(', ') || 'None';
-
-            const itemsHtml = cart.map(i => {
-                const sub = i.price * i.qty;
-                gross += sub;
-                return `<tr><td class="py-1 receipt-text">${i.name}</td><td class="receipt-text">${i.qty}</td><td class="text-right receipt-text">Rs. ${sub.toFixed(2)}</td></tr>`;
-            }).join('');
-
-            const discVal = (gross * discPct) / 100;
-            const net = gross - discVal;
-
-            document.getElementById('recItems').innerHTML = itemsHtml;
-            document.getElementById('recGross').innerText = gross.toFixed(2);
-            document.getElementById('recDiscPct').innerText = discPct;
-            document.getElementById('recDiscVal').innerText = discVal.toFixed(2);
-            document.getElementById('recNet').innerText = net.toFixed(2);
-
-            // Construct Direct QR URL targeting standalone receipt view
-            const baseUrl = window.location.origin + window.location.pathname;
-            const qrParams = `?receipt_public=true&name=${encodeURIComponent(name)}&phone=${encodeURIComponent(phone)}&date=${encodeURIComponent(dateStr)}&pay=${encodeURIComponent(payMode)}&net=${net.toFixed(2)}&items=${encodeURIComponent(itemsSummary)}`;
-            const fullQrUrl = baseUrl + qrParams;
-
-            // Render QR Code in Live Slip
-            const qrContainer = document.getElementById('receiptQrCode');
-            qrContainer.innerHTML = '';
-            qrCodeInstance = new QRCode(qrContainer, {
-                text: fullQrUrl,
-                width: 64,
-                height: 64,
-                colorDark : "#000000",
-                colorLight : "#ffffff",
-                correctLevel : QRCode.CorrectLevel.M
-            });
-        }
-
-        function completeSale() {
-            if(cart.length === 0) return alert('Cart is empty!');
-
-            const sale = {
-                id: Date.now(),
-                date: new Date().toISOString().split('T')[0],
-                name: document.getElementById('custName').value || 'Walk-in Patient',
-                phone: document.getElementById('custPhone').value || 'N/A',
-                age: document.getElementById('custAge').value || 'N/A',
-                paymentMethod: document.getElementById('paymentMethod').value,
-                items: cart.map(c => `${c.name} (${c.qty})`).join(', '),
-                total: parseFloat(document.getElementById('recNet').innerText)
-            };
-
-            cart.forEach(c => {
-                const item = inventory.find(i => i.id === c.id);
-                if(item) item.stock -= c.qty;
-            });
-
-            salesHistory.push(sale);
-            localStorage.setItem('danish_sales', JSON.stringify(salesHistory));
-            localStorage.setItem('danish_inventory', JSON.stringify(inventory));
-
-            alert('Sale Completed & Recorded Successfully!');
-            cart = [];
-            document.getElementById('custName').value = '';
-            document.getElementById('custPhone').value = '';
-            document.getElementById('custAge').value = '';
-            document.getElementById('posDiscount').value = '0';
-            renderCart();
-            init();
-        }
-
-        function renderPatients() {
-            const q = (document.getElementById('patientSearch')?.value || '').toLowerCase();
-            const tbody = document.getElementById('patientsTable');
-            const filtered = salesHistory.filter(s => s.name.toLowerCase().includes(q) || s.phone.includes(q));
-            
-            tbody.innerHTML = filtered.map(s => `
-                <tr class="hover:bg-slate-50/80">
-                    <td class="p-4 text-slate-500 text-xs font-medium">${s.date}</td>
-                    <td class="p-4 font-semibold text-slate-800">${s.name}<br><span class="text-xs font-normal text-slate-500">${s.phone}</span></td>
-                    <td class="p-4 text-xs font-medium">${s.age}</td>
-                    <td class="p-4 text-xs text-slate-600 font-medium">${s.items}</td>
-                    <td class="p-4 text-xs font-bold text-slate-600">${s.paymentMethod || 'Cash'}</td>
-                    <td class="p-4 font-bold text-emerald-600">Rs. ${s.total.toFixed(2)}</td>
-                    <td class="p-4 text-center">
-                        <button onclick="viewReceiptSlip(${s.id})" class="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition" title="View Thermal Receipt">
-                            <i class="fa-solid fa-eye text-sm text-[#0f6c53]"></i>
-                        </button>
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        function viewReceiptSlip(saleId) {
-            const sale = salesHistory.find(s => s.id === saleId);
-            if (!sale) return;
-
-            document.getElementById('mRecName').innerText = sale.name;
-            document.getElementById('mRecPhone').innerText = sale.phone;
-            document.getElementById('mRecAge').innerText = sale.age;
-            document.getElementById('mRecDate').innerText = sale.date;
-            document.getElementById('mRecPay').innerText = sale.paymentMethod || 'Cash';
-            document.getElementById('mRecItems').innerText = sale.items;
-            document.getElementById('mRecTotal').innerText = sale.total.toFixed(2);
-
-            const baseUrl = window.location.origin + window.location.pathname;
-            const qrParams = `?receipt_public=true&name=${encodeURIComponent(sale.name)}&phone=${encodeURIComponent(sale.phone)}&date=${encodeURIComponent(sale.date)}&pay=${encodeURIComponent(sale.paymentMethod || 'Cash')}&net=${sale.total.toFixed(2)}&items=${encodeURIComponent(sale.items)}`;
-            
-            const modalQrContainer = document.getElementById('modalReceiptQrCode');
-            modalQrContainer.innerHTML = '';
-            modalQrCodeInstance = new QRCode(modalQrContainer, {
-                text: baseUrl + qrParams,
-                width: 64,
-                height: 64,
-                colorDark : "#000000",
-                colorLight : "#ffffff",
-                correctLevel : QRCode.CorrectLevel.M
-            });
-
-            toggleModal('receiptModal', true);
-        }
-
-        function exportPatientsToPDF() {
-            if (salesHistory.length === 0) {
-                alert("No patient data available to export!");
-                return;
-            }
-
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-
-            doc.setFontSize(16);
-            doc.setTextColor(15, 23, 42);
-            doc.text("Danish Medical Store - Patient Records", 14, 15);
-            doc.setFontSize(10);
-            doc.setTextColor(100);
-            doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 22);
-
-            const tableRows = salesHistory.map(s => [
-                s.date,
-                s.name,
-                s.phone,
-                s.age,
-                s.items,
-                s.paymentMethod || 'Cash',
-                `Rs. ${s.total.toFixed(2)}`
-            ]);
-
-            doc.autoTable({
-                startY: 28,
-                head: [['Date', 'Patient Name', 'Phone', 'Age', 'Purchased Items', 'Payment', 'Total Paid']],
-                body: tableRows,
-                theme: 'grid',
-                headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255] },
-                alternateRowStyles: { fillColor: [248, 250, 252] },
-                styles: { fontSize: 8, cellPadding: 3 }
-            });
-
-            doc.save(`Patient_Records_${new Date().toISOString().split('T')[0]}.pdf`);
-        }
-
-        function renderAccounts() {
-            const totalRevenue = salesHistory.reduce((acc, curr) => acc + curr.total, 0);
-            const stockValuation = inventory.reduce((acc, curr) => acc + (curr.price * curr.stock), 0);
-
-            document.getElementById('accTotalRevenue').innerText = totalRevenue.toFixed(2);
-            document.getElementById('accTotalSales').innerText = salesHistory.length;
-            document.getElementById('accTotalItems').innerText = inventory.length;
-            document.getElementById('accStockValue').innerText = stockValuation.toFixed(2);
-        }
-
-        function exportAccountsPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-
-            doc.setFontSize(16);
-            doc.text("Danish Medical Store - Financial Sales Summary", 14, 15);
-            doc.setFontSize(10);
-            doc.text(`Report Date: ${new Date().toLocaleDateString()}`, 14, 22);
-
-            const totalRevenue = salesHistory.reduce((acc, curr) => acc + curr.total, 0);
-            doc.text(`Total Revenue Collected: Rs. ${totalRevenue.toFixed(2)}`, 14, 30);
-            doc.text(`Total Orders Completed: ${salesHistory.length}`, 14, 36);
-
-            doc.save(`Sales_Report_${new Date().toISOString().split('T')[0]}.pdf`);
-        }
-
-        function downloadBackup() {
-            const data = {
-                inventory: inventory,
-                salesHistory: salesHistory,
-                systemUsers: systemUsers,
-                deviceLogs: deviceLogs
-            };
-            const jsonStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data));
-            const downloadAnchor = document.createElement('a');
-            downloadAnchor.setAttribute("href", jsonStr);
-            downloadAnchor.setAttribute("download", `Danish_Medical_Backup_${new Date().toISOString().split('T')[0]}.json`);
-            document.body.appendChild(downloadAnchor);
-            downloadAnchor.click();
-            downloadAnchor.remove();
-        }
-
-        function restoreBackup() {
-            const fileInput = document.getElementById('restoreFile');
-            if(!fileInput.files.length) {
-                alert('Please select a backup JSON file first!');
-                return;
-            }
-
-            const file = fileInput.files[0];
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const data = JSON.parse(e.target.result);
-                    if(data.inventory && data.salesHistory) {
-                        inventory = data.inventory;
-                        salesHistory = data.salesHistory;
-                        if(data.systemUsers) systemUsers = data.systemUsers;
-                        if(data.deviceLogs) deviceLogs = data.deviceLogs;
-
-                        localStorage.setItem('danish_inventory', JSON.stringify(inventory));
-                        localStorage.setItem('danish_sales', JSON.stringify(salesHistory));
-                        localStorage.setItem('danish_users', JSON.stringify(systemUsers));
-                        localStorage.setItem('danish_device_logs', JSON.stringify(deviceLogs));
-                        
-                        alert('Data Restored Successfully!');
-                        init();
-                    } else {
-                        alert('Invalid backup file format!');
-                    }
-                } catch(err) {
-                    alert('Error reading backup file!');
-                }
-            };
-            reader.readAsText(file);
-        }
-    </script>
+      });
+
+      const activeView = document.getElementById(`view-${tabName}`);
+      const activeNav = document.getElementById(`nav-${tabName}`);
+      if (activeView) activeView.classList.remove('hidden');
+      if (activeNav) {
+        activeNav.classList.add('gold-active-tab');
+        activeNav.classList.remove('text-slate-400');
+      }
+    }
+
+    // Dynamic Thermal Slip Width Setter
+    function changeReceiptSize(size) {
+      const customGroup = document.getElementById('customWidthGroup');
+      let finalWidth = size;
+
+      if (size === 'custom') {
+        customGroup.classList.remove('hidden');
+        return;
+      } else {
+        customGroup.classList.add('hidden');
+      }
+
+      setThermalWidth(finalWidth);
+    }
+
+    function applyCustomWidth() {
+      const val = document.getElementById('customMmInput').value;
+      if (val && val > 20) {
+        setThermalWidth(`${val}mm`);
+      }
+    }
+
+    function setThermalWidth(widthStr) {
+      document.documentElement.style.setProperty('--receipt-width', widthStr);
+      document.getElementById('previewWidthLabel').innerText = widthStr;
+      document.getElementById('printBtnWidthLabel').innerText = widthStr;
+      document.getElementById('activeWidthTag').innerText = widthStr;
+    }
+
+    // QR Code Generation
+    window.onload = function() {
+      try {
+        const qr = qrcode(0, 'M');
+        qr.addData('DANISH-MEDICAL-SALE-2026');
+        qr.make();
+        document.getElementById('qrcode').innerHTML = qr.createImgTag(3);
+      } catch (e) {
+        console.log(e);
+      }
+    };
+
+    // Trigger Print
+    function triggerPrint() {
+      window.print();
+    }
+  </script>
 </body>
 </html>
